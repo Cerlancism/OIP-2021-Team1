@@ -1,0 +1,26 @@
+<annotation>
+	<folder>data</folder>
+	<filename>J8KR2X.jpg</filename>
+	<path>/Users/cheukfung.ng/Desktop/GitHub/OIP-2021-Team1/cv/training_custom_ssd/data/J8KR2X.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>558</width>
+		<height>744</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>wetsyringe</name>
+		<pose>Unspecified</pose>
+		<truncated>1</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>48</xmin>
+			<ymin>1</ymin>
+			<xmax>511</xmax>
+			<ymax>744</ymax>
+		</bndbox>
+	</object>
+</annotation>

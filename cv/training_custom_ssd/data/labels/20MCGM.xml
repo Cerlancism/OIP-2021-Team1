@@ -1,0 +1,26 @@
+<annotation>
+	<folder>data</folder>
+	<filename>20MCGM.jpg</filename>
+	<path>/Users/cheukfung.ng/Desktop/GitHub/OIP-2021-Team1/cv/training_custom_ssd/data/20MCGM.jpg</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>558</width>
+		<height>744</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>wetsyringe</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>202</xmin>
+			<ymin>6</ymin>
+			<xmax>373</xmax>
+			<ymax>701</ymax>
+		</bndbox>
+	</object>
+</annotation>
