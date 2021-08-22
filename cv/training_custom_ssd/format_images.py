@@ -1,6 +1,7 @@
 from PIL import Image
 import os
-
+import string
+import random
 from os.path import basename
 
 def resizeImages(baseDir):
@@ -18,7 +19,19 @@ def resizeImages(baseDir):
             print (filenameOnly, "Done")
     print('Done')
          
+def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
+ 
+def assignRandomNames(baseDir):
+    for filename in os.listdir(baseDir):
+        filepath = baseDir + os.sep + filename
+        if os.path.isfile(filepath):
+            finalFolder = baseDir
+            filenameOnly, file_extension = os.path.splitext(finalFolder + os.sep + filename)
+            os.rename(filepath, finalFolder + os.sep + id_generator()+file_extension)
+
+
 # Usage
 baseDir = "/home/pi/Github/OIP-2021-Team1/cv/training_custom_ssd/data"
-resizeImages(baseDir)
+assignRandomNames(baseDir)
 # baseDir = 'dir'
