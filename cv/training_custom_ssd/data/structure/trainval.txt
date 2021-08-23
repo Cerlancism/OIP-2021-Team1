@@ -1,0 +1,17 @@
+images/JIPPBI.jpg labels/JIPPBI.xml
+images/P9HGCN.jpg labels/P9HGCN.xml
+images/V055ZQ.jpg labels/V055ZQ.xml
+images/OHKKAP.jpg labels/OHKKAP.xml
+images/VXTPM1.jpg labels/VXTPM1.xml
+images/T7QWFN.jpg labels/T7QWFN.xml
+images/J8KR2X.jpg labels/J8KR2X.xml
+images/20MCGM.jpg labels/20MCGM.xml
+images/CTZ8P2.jpg labels/CTZ8P2.xml
+images/AL6GQ0.jpg labels/AL6GQ0.xml
+images/82IP90.jpg labels/82IP90.xml
+images/5VOWUS.jpg labels/5VOWUS.xml
+images/SRMBVH.jpg labels/SRMBVH.xml
+images/9DOK4V.jpg labels/9DOK4V.xml
+images/NYOQPZ.jpg labels/NYOQPZ.xml
+images/2S89OR.jpg labels/2S89OR.xml
+images/620Z01.jpg labels/620Z01.xml

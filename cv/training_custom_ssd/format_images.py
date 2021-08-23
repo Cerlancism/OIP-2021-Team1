@@ -33,7 +33,7 @@ def assignRandomNames(baseDir):
 
 def createTrainvalTxt(baseDirDataSet):
     buffer = ''
-    baseDir = baseDirDataSet+'\images'
+    baseDir = baseDirDataSet+'/images'
     for filename in os.listdir(baseDir):
         filenameOnly, file_extension = os.path.splitext(filename)
         # print (file_extension)
@@ -42,8 +42,9 @@ def createTrainvalTxt(baseDirDataSet):
         img_file, anno = s.strip("\n").split(" ")
         print(repr(img_file), repr(anno))
         buffer+=s
-    with open(baseDirDataSet+'\\structure\\trainval.txt', 'w') as file:
-        file.write(buffer)  
+        print(buffer)
+    f = open('trainval.txt', 'w')
+    f.write(buffer)
     print('Done')   
 
 # Usage
