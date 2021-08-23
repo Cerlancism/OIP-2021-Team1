@@ -4,7 +4,7 @@
   "description": "Phaser CE analog digital clock.",
   "scripts": {
     "start": "parcel serve src/index.html --out-dir dev/",
-    "build": "parcel build src/index.html --out-dir build/ --public-url ./"
+    "build": "rm -rf build/* && parcel build src/index.html --out-dir build/ --public-url ./"
   },
   "keywords": [
     "phaser",
