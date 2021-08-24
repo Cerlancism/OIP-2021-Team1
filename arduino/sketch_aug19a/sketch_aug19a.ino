@@ -10,6 +10,8 @@
 
 DHT dht(DHTPIN, DHTTYPE);
 
+int isSpin = 0;
+
 // Number of steps per internal motor revolution 
 const float STEPS_PER_REV = 32; 
  
@@ -40,6 +42,7 @@ void setup() {
 }
 
 void loop() {
+  /*
   delay(2000);
   digitalWrite(fan, HIGH);
   float h = dht.readHumidity();
@@ -61,6 +64,22 @@ void loop() {
   Serial.print(F("C \n"));
 
   baserotate();
+  */
+  // Incoming message from Serial Comms
+  if(Serial.available() > 0) 
+  {
+    String msg = Serial.readStringUntil('\n');
+    Serial.print("Serial message received: ");
+    Serial.println(msg);
+    if(msg == "Spin")
+    {
+      isSpin = 1;
+    }
+  }
+  if(isSpin == 1)
+  {
+    baserotate();
+  }
 }
 
 void baserotate(){
@@ -68,5 +87,4 @@ void baserotate(){
   StepsRequired  =  STEPS_PER_OUT_REV / 4; 
   steppermotor.setSpeed(1000);   
   steppermotor.step(StepsRequired);
-  delay(5000);
 }
