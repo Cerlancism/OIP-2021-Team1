@@ -64,7 +64,7 @@ class SyringeDryer:
 
 
 
-s = SyringeDryer()
+# s = SyringeDryer()
 
 
 

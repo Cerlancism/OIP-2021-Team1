@@ -1,14 +1,12 @@
 
 import time
 import threading
-import serial_coms
 
 import components
+
 from context import Context
 
 print("Python Server")
-
-serial_coms.run()
 
 from flask import Flask, config, request
 from flask_cors import CORS
@@ -45,6 +43,18 @@ def get_door():
     return "open" if status < 350 else "close"
 
 
+@app.route("/motor")
+def motor():
+    state = None
+    if request.args.get("on") is not None:
+        state = True
+    if request.args.get("off") is not None:
+        state = False
+    components.set_motor(state)
+    message = "motor: " + str(state) + "\n"
+    print(message)
+    return message
+
 @app.route("/fan")
 def fan():
     state = None
@@ -65,10 +75,14 @@ def uv():
         state = True
     if request.args.get("off") is not None:
         state = False
-    components.set_fan(state)
+    components.set_uv(state)
     message = "uv: " + str(state) + "\n"
     print(message)
     return message
+
+@app.route("/sensors")
+def sensors():
+    return components.get_sensors()
 
 def start_session():
     global context
