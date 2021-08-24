@@ -27,7 +27,7 @@
   "dependencies": {
     "@babel/polyfill": "^7.12.1",
     "@babel/runtime": "^7.15.3",
-    "phaser-ce": "^2.18.0",
-    "parcel-bundler": "^1.12.5"
+    "parcel-bundler": "^1.12.5",
+    "phaser-ce": "^2.18.0"
   }
 }

@@ -1,3 +1,4 @@
+import { Client, IClient, OfflineClient } from "./Client"
 import { Clock } from "./Clock"
 import { pointLerp } from "./Helper"
 import { TextButton } from "./TextButton"
@@ -13,12 +14,21 @@ export class Boot extends Phaser.State
     clock = new Clock(this)
 
     progressOject: Phaser.Group
+    popupObject: Phaser.Group
 
     startButtuon: TextButton
     cancelButton: TextButton
 
+    popupYesButton: TextButton
+    popupNoButton: TextButton
+    popUpCloseButton: TextButton
+
     textureStartButton: Phaser.RenderTexture
     textureStopButton: Phaser.RenderTexture
+
+    texturePopupChoiceButton: Phaser.RenderTexture
+    texturePopupCloseButton: Phaser.RenderTexture
+    texturePopup: Phaser.RenderTexture
 
     stateText: Phaser.Text
 
@@ -36,9 +46,17 @@ export class Boot extends Phaser.State
     updateEvent: Phaser.TimerEvent
     updateEventTick = 0
 
+    popupText: Phaser.Text
+
+    client: IClient
+    sensorUpdater: Phaser.TimerEvent
+    sensorData: { temperature: number; humidity: number; proximity: number }
+
     constructor()
     {
         super()
+        this.client = new OfflineClient()
+        // this.client = new Client(this.debugText)
     }
 
     init()
@@ -79,6 +97,22 @@ export class Boot extends Phaser.State
         this.textureStopButton = new Phaser.Graphics(this.game)
             .beginFill(0xAA0000, 0.8)
             .drawRoundedRect(0, 0, 150, 60, 20)
+            .generateTexture()
+
+        this.texturePopup = new Phaser.Graphics(this.game)
+            .beginFill(0xEEEEEE, 1)
+            .drawRoundedRect(0, 0, 275, 175, 20)
+            .generateTexture()
+
+        this.texturePopupCloseButton = new Phaser.Graphics(this.game)
+            .beginFill(0xE06666, 1)
+            .drawRoundedRect(0, 0, 50, 50, 20)
+            .generateTexture()
+
+        this.texturePopupChoiceButton = new Phaser.Graphics(this.game)
+            .beginFill(0xFFFFFF, 1)
+            .lineStyle(1, 0x000000, 1)
+            .drawRoundedRect(0, 0, 75, 50, 20)
             .generateTexture()
     }
 
@@ -121,10 +155,58 @@ export class Boot extends Phaser.State
             .withStyle({ fill: "#FFFFFF", fontSize: 37.5, fontWeight: 100 })
             .withInputScale()
             .withDisabledAlpha(0)
-            .setCallBack(() => this.stopProcess())
+            .setCallBack(() => {
+                this.cancelButton.setActive(false)
+                this.popupObject.scale.set(1, 1)
+            })
             .setActive(false)
 
+
+        //popup stuff
+
+        this.popupObject = this.add.group(this.world, "popup")
+        this.popupObject.x = 10
+        this.popupObject.y = 20
+        this.popupObject.create(12, 15, this.texturePopup)
+        //this.popupObject.create(255, -10, this.texturePopupCloseButton)
+        //this.popupObject.create(50, 125, this.texturePopupChoiceButton)
+        //this.popupObject.create(175, 125, this.texturePopupChoiceButton)
+
+        this.popupText = this.add.text(150, 50, "Are you sure you want to cancel?", { fill: "#000000", fontSize: 24, fontWeight: 100, wordWrap: true, wordWrapWidth: 225, align: "center" }, this.popupObject)
+        this.popupText.anchor.set(0.5, 0)
+
+        this.popUpCloseButton = new TextButton(this.game, 275, 20, this.texturePopupCloseButton as any, "X")
+            .withStyle({ fill: "#000000", fontSize: 26, fontWeight: 100 })
+            .groupTo(this.popupObject)
+            .withInputScale()
+            .withDisabledAlpha(0)
+            .setActive(false)
+
+        this.popupYesButton = new TextButton(this.game, 75, 150, this.texturePopupChoiceButton as any, "Yes")
+            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+            .groupTo(this.popupObject)
+            .withInputScale()
+            .setCallBack(() => 
+            {
+                this.popupObject.scale.set(0, 0)
+                this.stopProcess()
+            })
+
+        this.popupNoButton = new TextButton(this.game, 225, 150, this.texturePopupChoiceButton as any, "No")
+            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+            .groupTo(this.popupObject)
+            .withInputScale()
+            .setCallBack(() => {
+                this.cancelButton.setActive(true)
+                this.popupObject.scale.set(0, 0)
+            })
+
+        this.popupObject.scale.set(0, 0)
+
         Boot.onCreate.dispatch()
+
+        this.sensorUpdater = this.time.events.repeat(1000, Infinity, () => this.sensorUpdate())
+        this.sensorUpdate()
     }
 
     setStateText(text: string)
@@ -133,19 +215,34 @@ export class Boot extends Phaser.State
         this.stateText.anchor.setTo(0.5, 0);
     }
 
+    async startProcess()
+    {
+        console.log("Starting process")
+
+        if (this.sensorData.proximity < 3000)
+        {
+            console.warn("Door is not closed")
+            return
+        }
+
+        this.resetProgressView()
+        this.startButtuon.setActive(false)
+
+        await this.client.start()
+
+        this.cancelButton.setActive(true)
+
+        this.setStateText("Sterilising and Drying")
+        this.updateEvent = this.time.events.repeat(100, Infinity, this.updateProgress, this)
+        this.circleA.tint = 0x00AA00
+
+    }
+
     async stopProcess()
     {
         if (!this.isFinished())
         {
-
-            const response = await fetch(`${EndPoint}/stop`)
-            const result = await response.text()
-            console.log("Stop", result)
-            if (!response.ok)
-            {
-                this.debugText.text = "Stop error"
-                throw "Stop error"
-            }
+            this.client.stop()
 
             this.setStateText("Canceled")
             this.time.events.add(2000, () =>
@@ -185,34 +282,6 @@ export class Boot extends Phaser.State
         return this.updateEventTick >= (this.refProg * 3)
     }
 
-    async startProcess()
-    {
-        console.log("Starting process")
-        this.resetProgressView()
-        this.startButtuon.setActive(false)
-
-        /*
-        TODO:
-        "http://localhost:5000/start?ignore_door&concurrent&fan=300&uv=10"
-        */
-        const response = await fetch(`${EndPoint}/start`)
-        const result = await response.text()
-        console.log("Start", result)
-        
-        if (!response.ok)
-        {
-            this.debugText.text = "Start error"
-            throw "Start error"
-        }
-
-        this.cancelButton.setActive(true)
-
-        this.setStateText("Sterilising and Drying")
-        this.updateEvent = this.time.events.repeat(100, Infinity, this.updateProgress, this)
-        this.circleA.tint = 0x00AA00
-
-    }
-
     refProg = 25.0
     fillAX = 0
     fillBX = 0
@@ -250,6 +319,12 @@ export class Boot extends Phaser.State
         }
 
         console.log("Progress Update", this.updateEventTick / 10.0, "s")
+    }
+
+    async sensorUpdate()
+    {
+        this.sensorData = await this.client.sensors()
+        this.debugText.text = `h:${this.sensorData.humidity.toFixed(1)} t:${this.sensorData.temperature.toFixed(1)} p:${this.sensorData.proximity}`
     }
 
     update()
