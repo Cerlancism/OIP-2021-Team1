@@ -10,7 +10,8 @@
 
 DHT dht(DHTPIN, DHTTYPE);
 
-int isSpin = 0;
+int SPIN_ON = 0;
+int UV_ON = 0;
 
 // Number of steps per internal motor revolution 
 const float STEPS_PER_REV = 32; 
@@ -69,14 +70,52 @@ void loop() {
   if(Serial.available() > 0) 
   {
     String msg = Serial.readStringUntil('\n');
-    Serial.print("Serial message received: ");
-    Serial.println(msg);
     if(msg == "Spin")
     {
-      isSpin = 1;
+      SPIN_ON = 1;
+    }
+    if(msg == "No Spin")
+    {
+      SPIN_ON = 0;
+    }
+    if(msg == "Fan")
+    {
+      digitalWrite(fan, HIGH);
+    }
+    if(msg == "No Fan")
+    {
+      digitalWrite(fan, LOW);
+    }
+    if(msg == "UV")
+    {
+      UV_ON = 1;
+    }
+    if(msg == "No UV")
+    {
+      UV_ON = 0;
+    }
+    if(msg == "TH")
+    {
+      int h = dht.readHumidity();
+      // Read temperature as Celsius (the default)
+      int t = dht.readTemperature();
+
+      if (isnan(h) || isnan(t)) 
+      {
+        Serial.print(0); 
+        Serial.print(",");
+        Serial.println(0);
+      }
+      else
+      {
+        Serial.print(h); 
+        Serial.print(",");
+        Serial.println(t);
+      }
     }
   }
-  if(isSpin == 1)
+
+  if(SPIN_ON == 1)
   {
     baserotate();
   }
