@@ -43,7 +43,7 @@ class SyringeDryer:
         self.ser.write(b"Data\n")
         self.ser.flush()
         recv =  self.ser.readline().decode('utf-8')
-        print("recv", recv)
+        # print("recv", recv)
         parsed = recv.split(',')
         result = {
             "humidity" : 0.0,

@@ -4,3 +4,4 @@ class Configuration:
         self.uv = 0
         self.concurrent = True
         self.ignore_door = False
+        

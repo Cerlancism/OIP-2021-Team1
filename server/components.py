@@ -1,7 +1,11 @@
 from SyringeDryer import SyringeDryer
 
+dryer = None
 
-dryer = SyringeDryer()
+try:
+    dryer = SyringeDryer()
+except Exception as e:
+    print("\033[91m" + "USB failed to establish", e, "\033[0m")
 
 def set_motor(state=None):
     if state is None:
