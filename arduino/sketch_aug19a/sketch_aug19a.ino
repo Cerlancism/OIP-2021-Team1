@@ -94,11 +94,11 @@ void loop() {
     {
       UV_ON = 0;
     }
-    if(msg == "TH")
+    if(msg == "Data")
     {
-      int h = dht.readHumidity();
+      int h = dht.readHumidity() * 100;
       // Read temperature as Celsius (the default)
-      int t = dht.readTemperature();
+      int t = dht.readTemperature() *100;
 
       if (isnan(h) || isnan(t)) 
       {
