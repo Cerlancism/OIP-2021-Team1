@@ -1,7 +1,10 @@
+
+import time
 import threading
 import serial_coms
 
 import components
+from context import Context
 
 print("Python Server")
 
@@ -13,6 +16,7 @@ from flask_cors import CORS
 app = Flask(__name__, static_url_path="", static_folder="../ui/build/")
 CORS(app)
 
+context: Context = None
 
 @app.route("/start")
 def start_process():
@@ -66,10 +70,23 @@ def uv():
     print(message)
     return message
 
+def start_session():
+    global context
+    context = Context()
+    context.thread = threading.Thread(target=heartbeat)
+    context.thread  = True
+    context.thread.start()
 
-def run():
-    print("Running Serial Run time")
+def stop_session():
+    global context
+    if context is not None:
+        context.running = False
+        context.thread.join()
+        print("headbeat stopped")
+    
 
 
-runner = threading.Thread(target=run)
-runner.start()
+def heartbeat():
+    while context.running:
+        time.sleep(0.5)
+    
