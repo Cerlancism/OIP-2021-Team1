@@ -6,8 +6,12 @@ class SyringeDryer:
         # for windows
         # self.ser = serial.Serial(port='COM4', baudrate=9600, timeout=.1)
         # for linux
-        self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1) 
-        self.ser.flush()
+        try:
+            self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1) 
+            self.ser.flush()
+        except Exception as e:
+            print(e)
+            
         self.old_epoch = time.time()
         # self.run()
 

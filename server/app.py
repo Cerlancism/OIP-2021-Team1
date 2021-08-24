@@ -29,6 +29,10 @@ def start_process():
 
     return config
 
+@app.route("/ping")
+def ping():
+    print("Ping")
+    return "ok"
 
 @app.route("/stop")
 def stop_process():
