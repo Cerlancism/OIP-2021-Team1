@@ -181,7 +181,7 @@ export class Boot extends Phaser.State
         this.startButtuon.setActive(false)
         this.cancelButton.setActive(true)
 
-        this.setStateText("Cleaning")
+        this.setStateText("Sterilising and Drying")
         this.updateEvent = this.time.events.repeat(100, Infinity, this.updateProgress, this)
         this.circleA.tint = 0x00AA00
     }
@@ -207,7 +207,7 @@ export class Boot extends Phaser.State
         {
             this.circleB.tint = 0x00AA00
             this.fillBX  = (this.updateEventTick - this.refProg) / this.refProg
-            this.setStateText("Sterilising and Drying")
+            this.setStateText("Drying")
         }
 
         if (this.updateEventTick >= this.refProg * 2 && this.updateEventTick < this.refProg * 3)
@@ -227,7 +227,7 @@ export class Boot extends Phaser.State
 
     update()
     {
-        this.fillA.scale.x = pointLerp(new Phaser.Point(this.fillA.scale.x, this.fillA.scale.y), this.fillAX, 1, 0.2).x
+        this.fillA.scale.x = pointLerp(new Phaser.Point(this.fillA.scale.x, this.fillA.scale.y), this.fillAX, 1, 0.1).x
         this.fillB.scale.x = pointLerp(new Phaser.Point(this.fillB.scale.x, this.fillA.scale.y), this.fillBX, 1, 0.2).x
     }
 }
