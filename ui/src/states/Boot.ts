@@ -190,8 +190,7 @@ export class Boot extends Phaser.State
         console.log("Starting process")
         this.resetProgressView()
         this.startButtuon.setActive(false)
-        this.cancelButton.setActive(true)
-        
+
         /*
         TODO:
         "http://localhost:5000/start?ignore_door&concurrent&fan=300&uv=10"
@@ -199,10 +198,14 @@ export class Boot extends Phaser.State
         const response = await fetch(`${EndPoint}/start`)
         const result = await response.text()
         console.log("Start", result)
-        if (!response.ok) {
+        
+        if (!response.ok)
+        {
             this.debugText.text = "Start error"
             throw "Start error"
         }
+
+        this.cancelButton.setActive(true)
 
         this.setStateText("Sterilising and Drying")
         this.updateEvent = this.time.events.repeat(100, Infinity, this.updateProgress, this)
@@ -230,7 +233,7 @@ export class Boot extends Phaser.State
         if (this.updateEventTick >= this.refProg && this.updateEventTick <= this.refProg * 2)
         {
             this.circleB.tint = 0x00AA00
-            this.fillBX  = (this.updateEventTick - this.refProg) / this.refProg
+            this.fillBX = (this.updateEventTick - this.refProg) / this.refProg
             this.setStateText("Drying")
         }
 
