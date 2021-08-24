@@ -9,7 +9,7 @@ class SyringeDryer:
         self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1) 
         self.ser.flush()
         self.old_epoch = time.time()
-        self.run()
+        # self.run()
 
 
     def run(self):
@@ -43,20 +43,19 @@ class SyringeDryer:
         self.ser.write(b"Data\n")
         self.ser.flush()
         recv =  self.ser.readline().decode('utf-8')
-        print(recv)
-        recv.split(',')
+        print("recv", recv)
+        parsed = recv.split(',')
         result = {
             "humidity" : 0.0,
             "temperature" : 0.0,
             "proximity" : 0.0
         }
-        parsed = [x.rstip() for x in recv]
-        print(parsed)
+        parsed = [x.rstrip() for x in parsed]
 
         if(len(parsed) > 2):
-            result["humidity"] = int(parsed[0]+'0')/1000
-            result["temperature"] = int(parsed[1]+'0')/1000
-            result["proximity"] = int(parsed[2]+'0')/1000 
+            result["humidity"] = float(parsed[0]+'0')/1000
+            result["temperature"] = float(parsed[1]+'0')/1000
+            result["proximity"] = float(parsed[2]+'0')/10 
             return result
         else:
             return None
