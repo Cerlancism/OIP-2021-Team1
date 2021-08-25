@@ -51,6 +51,7 @@ export class Boot extends Phaser.State
     client: IClient
     sensorUpdater: Phaser.TimerEvent
     sensorData: { temperature: number; humidity: number; proximity: number }
+    ignoreDoor: boolean = false
 
     constructor()
     {
@@ -63,7 +64,6 @@ export class Boot extends Phaser.State
     {
         this.game.stage.disableVisibilityChange = true
         this.scale.scaleMode = Phaser.ScaleManager.RESIZE
-
     }
 
     preload()
@@ -101,7 +101,7 @@ export class Boot extends Phaser.State
 
         this.texturePopup = new Phaser.Graphics(this.game)
             .beginFill(0xEEEEEE, 1)
-            .drawRoundedRect(0, 0, 275, 175, 20)
+            .drawRoundedRect(0, 0, 300, 220, 20)
             .generateTexture()
 
         this.texturePopupCloseButton = new Phaser.Graphics(this.game)
@@ -112,7 +112,7 @@ export class Boot extends Phaser.State
         this.texturePopupChoiceButton = new Phaser.Graphics(this.game)
             .beginFill(0xFFFFFF, 1)
             .lineStyle(1, 0x000000, 1)
-            .drawRoundedRect(0, 0, 75, 50, 20)
+            .drawRoundedRect(0, 0, 100, 50, 10)
             .generateTexture()
     }
 
@@ -142,7 +142,7 @@ export class Boot extends Phaser.State
 
         this.circleC = this.progressOject.create(240, 0, this.progressCircleTexture)
 
-        const buttonY = 200
+        const buttonY = 190
 
         this.startButtuon = new TextButton(this.game, 320 / 2, buttonY, this.textureStartButton as any, "Start")
             .withStyle({ fill: "#FFFFFF", fontSize: 37.5, fontWeight: 100 })
@@ -155,24 +155,22 @@ export class Boot extends Phaser.State
             .withStyle({ fill: "#FFFFFF", fontSize: 37.5, fontWeight: 100 })
             .withInputScale()
             .withDisabledAlpha(0)
-            .setCallBack(() => {
-                this.cancelButton.setActive(false)
+            .setCallBack(() =>
+            {
+                this.setPopupYesNoCancel()
                 this.popupObject.scale.set(1, 1)
             })
             .setActive(false)
 
 
         //popup stuff
-
         this.popupObject = this.add.group(this.world, "popup")
         this.popupObject.x = 10
-        this.popupObject.y = 20
-        this.popupObject.create(12, 15, this.texturePopup)
-        //this.popupObject.create(255, -10, this.texturePopupCloseButton)
-        //this.popupObject.create(50, 125, this.texturePopupChoiceButton)
-        //this.popupObject.create(175, 125, this.texturePopupChoiceButton)
+        this.popupObject.y = 10
+        const popupBackground = this.popupObject.create(0, 0, this.texturePopup) as Phaser.Sprite
+        popupBackground.inputEnabled = true
 
-        this.popupText = this.add.text(150, 50, "Are you sure you want to cancel?", { fill: "#000000", fontSize: 24, fontWeight: 100, wordWrap: true, wordWrapWidth: 225, align: "center" }, this.popupObject)
+        this.popupText = this.add.text(150, 20, "Sample Text", { fill: "#000000", fontSize: 24, fontWeight: 100, wordWrap: true, wordWrapWidth: 230, align: "center" }, this.popupObject)
         this.popupText.anchor.set(0.5, 0)
 
         this.popUpCloseButton = new TextButton(this.game, 275, 20, this.texturePopupCloseButton as any, "X")
@@ -182,24 +180,15 @@ export class Boot extends Phaser.State
             .withDisabledAlpha(0)
             .setActive(false)
 
-        this.popupYesButton = new TextButton(this.game, 75, 150, this.texturePopupChoiceButton as any, "Yes")
-            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+        this.popupYesButton = new TextButton(this.game, 75, 180, this.texturePopupChoiceButton as any, "1")
+            .withStyle({ fill: "#000000", fontSize: 24, fontWeight: 100 })
             .groupTo(this.popupObject)
             .withInputScale()
-            .setCallBack(() => 
-            {
-                this.popupObject.scale.set(0, 0)
-                this.stopProcess()
-            })
 
-        this.popupNoButton = new TextButton(this.game, 225, 150, this.texturePopupChoiceButton as any, "No")
-            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+        this.popupNoButton = new TextButton(this.game, 225, 180, this.texturePopupChoiceButton as any, "2")
+            .withStyle({ fill: "#000000", fontSize: 24, fontWeight: 100 })
             .groupTo(this.popupObject)
             .withInputScale()
-            .setCallBack(() => {
-                this.cancelButton.setActive(true)
-                this.popupObject.scale.set(0, 0)
-            })
 
         this.popupObject.scale.set(0, 0)
 
@@ -215,6 +204,39 @@ export class Boot extends Phaser.State
         this.stateText.anchor.setTo(0.5, 0);
     }
 
+    setPopupYesNoCancel()
+    {
+        this.popupText.text = "Are you sure you want to cancel?"
+        this.popupYesButton.text.text = "Yes"
+        this.popupYesButton.setCallBack(() =>
+        {
+            this.popupObject.scale.set(0, 0)
+            this.stopProcess()
+        })
+        this.popupNoButton.text.text = "No"
+        this.popupNoButton.setCallBack(() =>
+        {
+            this.popupObject.scale.set(0, 0)
+        })
+    }
+
+    setPopupDoorCheck()
+    {
+        this.popupText.text = "Door is not fully closed, do you want to overide?"
+        this.popupYesButton.text.text = "Overide"
+        this.popupYesButton.setCallBack(() =>
+        {
+            this.popupObject.scale.set(0, 0)
+            this.ignoreDoor = true
+            this.startProcess()
+        })
+        this.popupNoButton.text.text = "Cancel"
+        this.popupNoButton.setCallBack(() =>
+        {
+            this.popupObject.scale.set(0, 0)
+        })
+    }
+
     async startProcess()
     {
         console.log("Starting process")
@@ -222,8 +244,16 @@ export class Boot extends Phaser.State
         if (this.sensorData.proximity < 3000)
         {
             console.warn("Door is not closed")
-            return
+
+            if (!this.ignoreDoor)
+            {
+                this.setPopupDoorCheck()
+                this.popupObject.scale.set(1, 1)
+                return
+            }
         }
+
+        this.setPopupYesNoCancel()
 
         this.resetProgressView()
         this.startButtuon.setActive(false)
