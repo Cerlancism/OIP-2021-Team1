@@ -10,6 +10,9 @@
 
 DHT dht(DHTPIN, DHTTYPE);
 
+int SPIN_ON = 0;
+int UV_ON = 0;
+
 // Number of steps per internal motor revolution 
 const float STEPS_PER_REV = 32; 
  
@@ -40,6 +43,7 @@ void setup() {
 }
 
 void loop() {
+  /*
   delay(2000);
   digitalWrite(fan, HIGH);
   float h = dht.readHumidity();
@@ -61,6 +65,60 @@ void loop() {
   Serial.print(F("C \n"));
 
   baserotate();
+  */
+  // Incoming message from Serial Comms
+  if(Serial.available() > 0) 
+  {
+    String msg = Serial.readStringUntil('\n');
+    if(msg == "Spin")
+    {
+      SPIN_ON = 1;
+    }
+    if(msg == "No Spin")
+    {
+      SPIN_ON = 0;
+    }
+    if(msg == "Fan")
+    {
+      digitalWrite(fan, HIGH);
+    }
+    if(msg == "No Fan")
+    {
+      digitalWrite(fan, LOW);
+    }
+    if(msg == "UV")
+    {
+      UV_ON = 1;
+    }
+    if(msg == "No UV")
+    {
+      UV_ON = 0;
+    }
+    if(msg == "TH")
+    {
+      int h = dht.readHumidity();
+      // Read temperature as Celsius (the default)
+      int t = dht.readTemperature();
+
+      if (isnan(h) || isnan(t)) 
+      {
+        Serial.print(0); 
+        Serial.print(",");
+        Serial.println(0);
+      }
+      else
+      {
+        Serial.print(h); 
+        Serial.print(",");
+        Serial.println(t);
+      }
+    }
+  }
+
+  if(SPIN_ON == 1)
+  {
+    baserotate();
+  }
 }
 
 void baserotate(){
@@ -68,5 +126,4 @@ void baserotate(){
   StepsRequired  =  STEPS_PER_OUT_REV / 4; 
   steppermotor.setSpeed(1000);   
   steppermotor.step(StepsRequired);
-  delay(5000);
 }
