@@ -38,6 +38,7 @@ void setup() {
   // put your setup code here, to run once:
   pinMode(IR_sensor, INPUT);
   pinMode(fan, OUTPUT);
+  pinMode(UV, OUTPUT);
   dht.begin();
   Serial.begin(9600);
 }
@@ -114,7 +115,7 @@ void loop() {
         Serial.print(",");
         Serial.print((int)(t * 100));
         Serial.print(",");
-        Serial.print(p * 100);
+        Serial.print(p);
         Serial.println(t);
       }
     }

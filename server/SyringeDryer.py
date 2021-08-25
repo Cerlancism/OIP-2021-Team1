@@ -56,7 +56,7 @@ class SyringeDryer:
         if(len(parsed) > 2):
             result["humidity"] = int(parsed[0]+'0')/1000
             result["temperature"] = int(parsed[1]+'0')/1000
-            result["proximity"] = int(parsed[2]+'0')/1000 
+            result["proximity"] = int(parsed[2]+'0')/10
             return result
         else:
             return None
