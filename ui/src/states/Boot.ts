@@ -16,6 +16,8 @@ export class Boot extends Phaser.State
     progressOject: Phaser.Group
     popupObject: Phaser.Group
 
+    mainConfigurationObject: Phaser.Group
+    
     startButtuon: TextButton
     cancelButton: TextButton
 
@@ -29,6 +31,8 @@ export class Boot extends Phaser.State
     texturePopupChoiceButton: Phaser.RenderTexture
     texturePopupCloseButton: Phaser.RenderTexture
     texturePopup: Phaser.RenderTexture
+    textureSquare: Phaser.RenderTexture
+    textureConfigurationsValues: Phaser.RenderTexture
 
     stateText: Phaser.Text
 
@@ -52,6 +56,20 @@ export class Boot extends Phaser.State
     sensorUpdater: Phaser.TimerEvent
     sensorData: { temperature: number; humidity: number; proximity: number }
     ignoreDoor: boolean = false
+
+    mainConfigurationText: Phaser.Text
+    configFanText: Phaser.Text
+    configUvText : Phaser.Text
+    configConcurrentText : Phaser.Text
+
+    configurations = { fan: -1, uv: 300, concurrent: true}
+    configUvCheckbox: TextButton
+    configFanCheckbox: TextButton
+    configConcurrentCheckbox: TextButton
+    configProceedButton: TextButton
+
+    configUvValues: TextButton
+    configFanValues: TextButton
 
     constructor()
     {
@@ -114,6 +132,18 @@ export class Boot extends Phaser.State
             .lineStyle(1, 0x000000, 1)
             .drawRoundedRect(0, 0, 100, 50, 10)
             .generateTexture()
+
+        this.textureSquare = new Phaser.Graphics(this.game)
+            .beginFill(0xFFFFFF, 0)
+            .lineStyle(1, 0x000000, 1)
+            .drawRoundedRect(0, 0, 20, 20, 5)
+            .generateTexture()
+
+        this.textureConfigurationsValues = new Phaser.Graphics(this.game)
+            .beginFill(0xFFFFFF, 0)
+            .lineStyle(1, 0x000000, 1)
+            .drawRoundedRect(0, 0, 90, 25, 5)
+            .generateTexture()
     }
 
     create()
@@ -161,8 +191,83 @@ export class Boot extends Phaser.State
                 this.popupObject.scale.set(1, 1)
             })
             .setActive(false)
+        
+        // configuration stuff
 
+        this.mainConfigurationObject = this.add.group(this.world, "mainConfiguration")
+        this.mainConfigurationObject.x = 10
+        this.mainConfigurationObject.y = 10
+        this.mainConfigurationObject.create(0, 0, this.texturePopup)
+        this.mainConfigurationText = this.add.text(150, 10, "Configurations", {fill: "#000000", fontSize: 26, fontWeight:100}, this.mainConfigurationObject)
+        this.mainConfigurationText.anchor.set(0.5, 0)
+        this.configUvText = this.add.text(25, 50, "UV", {fill: "#000000", fontSize: 20, fontWeight:100}, this.mainConfigurationObject)
+        this.configFanText = this.add.text(25, 90, "Fan", {fill: "#000000", fontSize: 20, fontWeight:100}, this.mainConfigurationObject)
+        this.configConcurrentText = this.add.text(25, 130, "Concurrent", {fill: "#000000", fontSize: 20, fontWeight:100}, this.mainConfigurationObject)
 
+        this.configUvCheckbox = new TextButton(this.game, 150, 60, this.textureSquare as any, "✔")
+            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+            .groupTo(this.mainConfigurationObject)
+            .withInputScale()
+            .setCallBack(() => 
+            {
+                if(this.configUvCheckbox.text.text === "✔")
+                {
+                    this.configUvCheckbox.text.text = ""
+                }
+                else
+                {
+                    this.configUvCheckbox.text.text = "✔"
+                }
+            })
+
+        this.configFanCheckbox = new TextButton(this.game, 150, 100, this.textureSquare as any, "✔")
+            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+            .groupTo(this.mainConfigurationObject)
+            .withInputScale()
+            .setCallBack(() => 
+            {
+                if(this.configFanCheckbox.text.text === "✔")
+                {
+                    this.configFanCheckbox.text.text = ""
+                }
+                else
+                {
+                    this.configFanCheckbox.text.text = "✔"
+                }
+            })
+
+        this.configConcurrentCheckbox = new TextButton(this.game, 150, 140, this.textureSquare as any, "✔")
+            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+            .groupTo(this.mainConfigurationObject)
+            .withInputScale()
+            .setCallBack(() => 
+            {
+                if(this.configConcurrentCheckbox.text.text === "✔")
+                {
+                    this.configConcurrentCheckbox.text.text = ""
+                }
+                else
+                {
+                    this.configConcurrentCheckbox.text.text = "✔"
+                }
+            })
+        
+        this.configProceedButton = new TextButton(this.game, 150, 190, this.texturePopupChoiceButton as any, "Proceed")
+            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+            .groupTo(this.mainConfigurationObject)
+            .withInputScale()
+
+        this.configUvValues = new TextButton(this.game, 240, 60, this.textureConfigurationsValues as any, "5 Mins")
+            .withStyle({ fill: "#000000", fontSize: 18, fontWeight: 100 })
+            .groupTo(this.mainConfigurationObject)
+            .withInputScale()
+
+        this.configFanValues = new TextButton(this.game, 240, 100, this.textureConfigurationsValues as any, "Auto")
+            .withStyle({ fill: "#000000", fontSize: 18, fontWeight: 100 })
+            .groupTo(this.mainConfigurationObject)
+            .withInputScale()
+
+        
         //popup stuff
         this.popupObject = this.add.group(this.world, "popup")
         this.popupObject.x = 10
