@@ -297,6 +297,8 @@ export class Boot extends Phaser.State
 
         this.popupObject.scale.set(0, 0)
 
+        this.mainConfigurationObject.scale.set(0,0)
+
         Boot.onCreate.dispatch()
 
         this.sensorUpdater = this.time.events.repeat(1000, Infinity, () => this.sensorUpdate())
