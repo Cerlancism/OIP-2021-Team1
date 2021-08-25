@@ -2,6 +2,7 @@ import { Clock } from "./Clock"
 import { pointLerp } from "./Helper"
 import { TextButton } from "./TextButton"
 
+const EndPoint = "http://localhost:5000"
 
 const ReferenceLength = 1080
 
@@ -132,10 +133,20 @@ export class Boot extends Phaser.State
         this.stateText.anchor.setTo(0.5, 0);
     }
 
-    stopProcess()
+    async stopProcess()
     {
         if (!this.isFinished())
         {
+
+            const response = await fetch(`${EndPoint}/stop`)
+            const result = await response.text()
+            console.log("Stop", result)
+            if (!response.ok)
+            {
+                this.debugText.text = "Stop error"
+                throw "Stop error"
+            }
+
             this.setStateText("Canceled")
             this.time.events.add(2000, () =>
             {
@@ -174,16 +185,29 @@ export class Boot extends Phaser.State
         return this.updateEventTick >= (this.refProg * 3)
     }
 
-    startProcess()
+    async startProcess()
     {
         console.log("Starting process")
         this.resetProgressView()
         this.startButtuon.setActive(false)
         this.cancelButton.setActive(true)
+        
+        /*
+        TODO:
+        "http://localhost:5000/start?ignore_door&concurrent&fan=300&uv=10"
+        */
+        const response = await fetch(`${EndPoint}/start`)
+        const result = await response.text()
+        console.log("Start", result)
+        if (!response.ok) {
+            this.debugText.text = "Start error"
+            throw "Start error"
+        }
 
         this.setStateText("Sterilising and Drying")
         this.updateEvent = this.time.events.repeat(100, Infinity, this.updateProgress, this)
         this.circleA.tint = 0x00AA00
+
     }
 
     refProg = 25.0
