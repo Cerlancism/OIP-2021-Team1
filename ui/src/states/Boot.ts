@@ -3,9 +3,7 @@ import { Clock } from "./Clock"
 import { pointLerp } from "./Helper"
 import { TextButton } from "./TextButton"
 
-const EndPoint = "http://localhost:5000"
-
-const ReferenceLength = 1080
+const ProximityThreshold = 4000
 
 export class Boot extends Phaser.State
 {
@@ -348,7 +346,7 @@ export class Boot extends Phaser.State
     {
         console.log("Starting process")
 
-        if (this.sensorData.proximity < 3000)
+        if (this.sensorData.proximity < ProximityThreshold)
         {
             console.warn("Door is not closed")
 
@@ -453,6 +451,15 @@ export class Boot extends Phaser.State
         {
             this.circleC.tint = 0x00AA00
             this.stopProcess()
+        }
+
+        if (this.sensorData.proximity < ProximityThreshold)
+        {
+            if (!this.ignoreDoor)
+            {
+                this.setPopupDoorCheck()
+                this.popupObject.scale.set(1, 1)
+            }
         }
 
         console.log("Progress Update", this.updateEventTick / 10.0, "s")

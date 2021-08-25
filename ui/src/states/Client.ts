@@ -4,6 +4,13 @@ type SensorModel = {
     proximity: number
 }
 
+const sensors: SensorModel = {
+    humidity: 99,
+    proximity: 700,
+    temperature: 30,
+}
+
+window["sensors"] = sensors
 
 export interface IClient
 {
@@ -54,24 +61,22 @@ export class Client implements IClient
 
     async sensors()
     {
-        return null
+        const response = await fetch(`${this.endpoint}/stop`)
+        const result = await response.json() as SensorModel
+        sensors.humidity = result.humidity
+        sensors.temperature = result.temperature
+        sensors.proximity = result.proximity
+        return sensors
     }
 }
 
 export class OfflineClient implements IClient
 {
     rng = new Phaser.RandomDataGenerator()
-    stub: SensorModel
 
     constructor()
     {
-        this.stub = {
-            humidity: 99,
-            proximity: 700,
-            temperature: 30,
-        }
 
-        window["sensor"] = this.stub
     }
 
     async start()
@@ -86,7 +91,7 @@ export class OfflineClient implements IClient
 
     async sensors(): Promise<SensorModel>
     {
-        return this.stub
+        return sensors
     }
 
 }
