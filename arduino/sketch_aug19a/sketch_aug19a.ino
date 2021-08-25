@@ -5,13 +5,13 @@
 #define IR_sensor 0 // Infrared Proximity Sensor
 #define fan 50 // 5V fan
 #define DHTPIN 8 // Temp & Humidity sensor
+#define UV 52 // UV Lamp
 
 #define DHTTYPE DHT11
 
 DHT dht(DHTPIN, DHTTYPE);
 
 int SPIN_ON = 0;
-int UV_ON = 0;
 
 // Number of steps per internal motor revolution 
 const float STEPS_PER_REV = 32; 
@@ -88,28 +88,33 @@ void loop() {
     }
     if(msg == "UV")
     {
-      UV_ON = 1;
+      digitalWrite(UV, HIGH);
     }
     if(msg == "No UV")
     {
-      UV_ON = 0;
+      digitalWrite(UV, LOW);
     }
     if(msg == "Data")
     {
-      int h = dht.readHumidity() * 100;
+      float h = dht.readHumidity();
       // Read temperature as Celsius (the default)
-      int t = dht.readTemperature() *100;
-
-      if (isnan(h) || isnan(t)) 
+      float t = dht.readTemperature();
+      int p = IRproximity();
+      if (isnan(h) || isnan(t) || isnan(p)) 
       {
         Serial.print(0); 
+        Serial.print(",");
+        Serial.print(0);
         Serial.print(",");
         Serial.println(0);
       }
       else
-      {
-        Serial.print(h); 
+      {  
+        Serial.print((int)(h * 100)); 
         Serial.print(",");
+        Serial.print((int)(t * 100));
+        Serial.print(",");
+        Serial.print(p * 100);
         Serial.println(t);
       }
     }
@@ -126,4 +131,9 @@ void baserotate(){
   StepsRequired  =  STEPS_PER_OUT_REV / 4; 
   steppermotor.setSpeed(1000);   
   steppermotor.step(StepsRequired);
+}
+
+int IRproximity (){
+  int val = analogRead(IR_sensor);
+  return val;
 }
