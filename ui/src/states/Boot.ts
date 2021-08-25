@@ -1,3 +1,4 @@
+import { CENTER } from "phaser-ce"
 import { Clock } from "./Clock"
 import { pointLerp } from "./Helper"
 import { TextButton } from "./TextButton"
@@ -13,12 +14,21 @@ export class Boot extends Phaser.State
     clock = new Clock(this)
 
     progressOject: Phaser.Group
+    popupObject: Phaser.Group
 
     startButtuon: TextButton
     cancelButton: TextButton
 
+    popupYesButton : TextButton
+    popupNoButton : TextButton
+    popUpCloseButton : TextButton
+
     textureStartButton: Phaser.RenderTexture
     textureStopButton: Phaser.RenderTexture
+
+    texturePopupChoiceButton : Phaser.RenderTexture
+    texturePopupCloseButton : Phaser.RenderTexture
+    texturePopup : Phaser.RenderTexture
 
     stateText: Phaser.Text
 
@@ -35,6 +45,8 @@ export class Boot extends Phaser.State
 
     updateEvent: Phaser.TimerEvent
     updateEventTick = 0
+
+    popupText: Phaser.Text
 
     constructor()
     {
@@ -80,6 +92,22 @@ export class Boot extends Phaser.State
             .beginFill(0xAA0000, 0.8)
             .drawRoundedRect(0, 0, 150, 60, 20)
             .generateTexture()
+
+        this.texturePopup = new Phaser.Graphics(this.game)
+            .beginFill(0xEEEEEE, 1)
+            .drawRoundedRect(0, 0, 275, 175, 20)
+            .generateTexture()
+        
+        this.texturePopupCloseButton = new Phaser.Graphics(this.game)
+            .beginFill(0xE06666, 1)
+            .drawRoundedRect(0, 0, 50, 50, 20)
+            .generateTexture()
+
+        this.texturePopupChoiceButton =  new Phaser.Graphics(this.game)
+            .beginFill(0xFFFFFF, 1)
+            .lineStyle(1, 0x000000, 1)
+            .drawRoundedRect(0, 0, 75, 50, 20)
+            .generateTexture()
     }
 
     create()
@@ -123,6 +151,43 @@ export class Boot extends Phaser.State
             .withDisabledAlpha(0)
             .setCallBack(() => this.stopProcess())
             .setActive(false)
+
+
+        //popup stuff
+
+        this.popupObject = this.add.group(this.world, "popup")
+        this.popupObject.x = 10
+        this.popupObject.y = 20
+        this.popupObject.create(12, 15, this.texturePopup)
+        //this.popupObject.create(255, -10, this.texturePopupCloseButton)
+        //this.popupObject.create(50, 125, this.texturePopupChoiceButton)
+        //this.popupObject.create(175, 125, this.texturePopupChoiceButton)
+
+        this.popupText = this.add.text(150 , 50, "Are you sure you want to cancel?", {fill: "#000000", fontSize:24, fontWeight:100, wordWrap:true, wordWrapWidth:225,align: "center"}, this.popupObject)
+        this.popupText.anchor.set(0.5, 0)
+            
+        this.popUpCloseButton = new TextButton(this.game, 275, 20, this.texturePopupCloseButton as any, "X")
+            .withStyle({fill: "#000000", fontSize: 26, fontWeight:100})
+            .groupTo(this.popupObject)
+            .withInputScale()
+            .withDisabledAlpha(0)
+            .setActive(false)
+
+        this.popupYesButton = new TextButton(this.game, 75, 150, this.texturePopupChoiceButton as any, "Yes")
+            .withStyle({fill: "#000000", fontSize : 20, fontWeight: 100})
+            .groupTo(this.popupObject)
+            .withInputScale()
+            .setCallBack(() => 
+            {
+                this.popupObject.scale.set(0, 0)
+                this.stopProcess()
+            })
+
+        this.popupNoButton = new TextButton(this.game, 225, 150, this.texturePopupChoiceButton as any, "No")
+            .withStyle({fill: "#000000", fontSize : 20, fontWeight: 100})
+            .groupTo(this.popupObject)
+            .withInputScale()
+            .setCallBack(() => this.popupObject.scale.set(0, 0))
 
         Boot.onCreate.dispatch()
     }
