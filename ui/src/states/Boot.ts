@@ -15,6 +15,7 @@ export class Boot extends Phaser.State
     popupObject: Phaser.Group
 
     mainConfigurationObject: Phaser.Group
+    uvConfigurationObject: Phaser.Group
     
     startButtuon: TextButton
     cancelButton: TextButton
@@ -60,7 +61,11 @@ export class Boot extends Phaser.State
     configUvText : Phaser.Text
     configConcurrentText : Phaser.Text
 
-    configurations = { fan: -1, uv: 300, concurrent: true}
+    configUvTitleText: Phaser.Text
+    configUvAutoText: Phaser.Text
+    configUvValueText: Phaser.Text
+
+    configurations = { fan: -1, uv: 10, concurrent: true}
     configUvCheckbox: TextButton
     configFanCheckbox: TextButton
     configConcurrentCheckbox: TextButton
@@ -68,6 +73,11 @@ export class Boot extends Phaser.State
 
     configUvValues: TextButton
     configFanValues: TextButton
+
+    configUvAutoCheckbox: TextButton
+    configUvIncrementButton: TextButton
+    configUvDecrementButton: TextButton
+    configUvProceedButton: TextButton
 
     constructor()
     {
@@ -265,7 +275,76 @@ export class Boot extends Phaser.State
             .groupTo(this.mainConfigurationObject)
             .withInputScale()
 
+        // uv configuration
+
+        this.uvConfigurationObject = this.add.group(this.world, "uv config")
+        this.uvConfigurationObject.x = 10
+        this.uvConfigurationObject.y = 10
+        this.uvConfigurationObject.create(0,0, this.texturePopup)
+        this.configUvTitleText = this.add.text(150, 10, "UV Configuration", {fill: "#000000", fontSize: 24, fontWeight: 100, align:"center"}, this.uvConfigurationObject)
+        this.configUvTitleText.anchor.set(0.5, 0)
+        this.configUvAutoText = this.add.text(75, 75, "Auto", {fill:"#000000", fontSize: 20, fontWeight:100}, this.uvConfigurationObject)
+        this.configUvCheckbox = new TextButton(this.game, 200, 85, this.textureSquare as any, "✔")
+            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+            .groupTo(this.uvConfigurationObject)
+            .withInputScale()
+            .setCallBack(() => 
+            {
+                if(this.configUvCheckbox.text.text === "✔")
+                {
+                    this.configUvCheckbox.text.text = ""
+                    this.configUvValueText.scale.set(0,0)
+                    this.configUvDecrementButton.scale.set(0,0)
+                    this.configUvDecrementButton.text.text = ""
+                    this.configUvIncrementButton.text.text = ""
+                    this.configUvIncrementButton.scale.set(0,0)
+                }
+                else
+                {
+                    this.configUvCheckbox.text.text = "✔"
+                    this.configUvValueText.scale.set(1,1)
+                    this.configUvDecrementButton.scale.set(1,1)
+                    this.configUvDecrementButton.text.text = "-"
+                    this.configUvIncrementButton.text.text = "+"
+                    this.configUvIncrementButton.scale.set(1,1)
+                }
+            })
+
+        this.configUvValueText = this.add.text(150, 125, this.configurations.uv + " Mins", {fill :"#000000", fontSize: 20, fontWeight:100, align:"center"}, this.uvConfigurationObject)
+        this.configUvValueText.anchor.set(0.5, 0)
+        this.configUvDecrementButton = new TextButton(this.game, 80, 137, this.textureSquare as any, " - ")
+            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+            .groupTo(this.uvConfigurationObject)
+            .withInputScale()
+            .setCallBack(() => 
+            {
+                if(this.configurations.uv > 1)
+                {
+                    this.configurations.uv = this.configurations.uv - 1
+                    this.configUvValueText.text = this.configurations.uv + " Mins"
+                }
+            })
+
+        this.configUvIncrementButton = new TextButton(this.game, 220, 137, this.textureSquare as any, " + ")
+            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+            .groupTo(this.uvConfigurationObject)
+            .withInputScale()
+            .setCallBack(() => 
+            {
+                if(this.configurations.uv < 10)
+                {
+                    this.configurations.uv = this.configurations.uv + 1
+                    this.configUvValueText.text = this.configurations.uv + " Mins"
+                }
+            })
+
+        this.configUvProceedButton = new TextButton(this.game, 150, 190, this.texturePopupChoiceButton as any, "Proceed")
+            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+            .groupTo(this.uvConfigurationObject)
+            .withInputScale()
         
+        
+
         //popup stuff
         this.popupObject = this.add.group(this.world, "popup")
         this.popupObject.x = 10
@@ -296,6 +375,8 @@ export class Boot extends Phaser.State
         this.popupObject.scale.set(0, 0)
 
         this.mainConfigurationObject.scale.set(0,0)
+
+        this.uvConfigurationObject.scale.set(0,0)
 
         Boot.onCreate.dispatch()
 
