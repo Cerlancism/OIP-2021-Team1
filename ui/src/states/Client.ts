@@ -4,12 +4,51 @@ type SensorModel = {
     proximity: number
 }
 
+type ConfigurationModel = {
+    fanEnabled: boolean
+    fanAuto: boolean,
+    fanSeconds: number,
+    uvEnabed: boolean,
+    uvSeconds: number,
+    concurrent: boolean
+}
+
+export const defaultConfig: ConfigurationModel = {
+    fanEnabled: true,
+    fanAuto: true,
+    fanSeconds: 60,
+    uvEnabed: true,
+    uvSeconds: 300,
+    concurrent: true
+}
+
+
+export const initConfig = Object.assign({}, defaultConfig)
+export const progressConfig = Object.assign({}, defaultConfig)
+
+const sensors: SensorModel = {
+    humidity: 99,
+    proximity: 700,
+    temperature: 30,
+}
+
+window["sensors"] = sensors
+window["initConfig"] = initConfig
+window["progressConfig"] = progressConfig
+
+export function setConfiguration(action: (c: ConfigurationModel) => void)
+{
+    action(initConfig)
+    action(progressConfig)
+}
 
 export interface IClient
 {
     start(): Promise<any>
     stop(): Promise<any>
+    actuate(component: "fan" | "uv" | "motor", state: boolean): Promise<any>
     sensors(): Promise<SensorModel | undefined>
+    ping(timeout: number): Promise<boolean>
 }
 
 export class Client implements IClient
@@ -52,26 +91,62 @@ export class Client implements IClient
         }
     }
 
+    async actuate(component: "fan" | "uv" | "motor", state: boolean)
+    {
+        const response = await fetch(`${this.endpoint}/${component}?${state ? "on" : "off"}`)
+        const result = await response.text()
+        console.log("Actuate", component, result)
+        if (!response.ok)
+        {
+            this.debugText.text = `Actuate ${component} error`
+            throw `Actuate ${component} error`
+        }
+    }
+
     async sensors()
     {
-        return null
+        const response = await fetch(`${this.endpoint}/sensors`)
+        const result = await response.json() as SensorModel
+        sensors.humidity = result.humidity
+        sensors.temperature = result.temperature
+        sensors.proximity = result.proximity
+        return sensors
+    }
+
+    async ping(timeout = 1000)
+    {
+        const responseTask = fetch(`${this.endpoint}/ping`)
+        const timeoutTask = new Promise((resolve, reject) =>
+        {
+            setTimeout(() =>
+            {
+                resolve("offline")
+            }, timeout)
+        })
+        const raced = await Promise.race([responseTask, timeoutTask])
+        if (raced !== "offline")
+        {
+            return true
+        }
+        else
+        {
+            return false
+        }
     }
 }
 
 export class OfflineClient implements IClient
 {
     rng = new Phaser.RandomDataGenerator()
-    stub: SensorModel
 
     constructor()
     {
-        this.stub = {
-            humidity: 99,
-            proximity: 700,
-            temperature: 30,
-        }
 
-        window["sensor"] = this.stub
+    }
+
+    ping(timeout: number): Promise<boolean>
+    {
+        throw new Error("Method not implemented.");
     }
 
     async start()
@@ -84,9 +159,14 @@ export class OfflineClient implements IClient
 
     }
 
+    async actuate(component: "fan" | "uv" | "motor", state: boolean)
+    {
+
+    }
+
     async sensors(): Promise<SensorModel>
     {
-        return this.stub
+        return sensors
     }
 
 }

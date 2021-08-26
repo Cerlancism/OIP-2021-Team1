@@ -1,2 +1,2 @@
 export DISPLAY=:0
-chromium-browser --kiosk --fullscreen http://localhost:1234/index.html  
+chromium-browser --kiosk --fullscreen http://localhost:1234

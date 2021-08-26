@@ -5,10 +5,11 @@ import threading
 import components
 
 from context import Context
+from configuration import Configuration
 
 print("Python Server")
 
-from flask import Flask, config, request
+from flask import Flask, request
 from flask_cors import CORS
 
 app = Flask(__name__, static_url_path="", static_folder="../ui/build/")
@@ -20,14 +21,15 @@ context: Context = None
 def start_process():
     print("Starting process", request.query_string)
 
-    config = {
-        "fan": request.args.get("fan", default=0, type=int),  # in seconds, 0 is auto
-        "uv": request.args.get("uv", default=300, type=int),  # in seconds
-        "concurrent": request.args.get("concurrent") is not None,
-        "ignore_door": request.args.get("ignore_door") is not None,
-    }
+    config = Configuration()
+    config.fan = request.args.get("fan", default=0, type=int) # in seconds, 0 is auto
+    config.uv = request.args.get("uv", default=300, type=int)  # in seconds
+    config.concurrent = request.args.get("concurrent") is not None
+    config.ignore_door = request.args.get("ignore_door") is not None
 
-    return config
+    start_session()
+
+    return config.__dict__
 
 @app.route("/ping")
 def ping():
@@ -37,6 +39,7 @@ def ping():
 @app.route("/stop")
 def stop_process():
     print("Stopping process", request.query_string)
+    stop_session()
     return "ok\n"
 
 
@@ -86,25 +89,45 @@ def uv():
 
 @app.route("/sensors")
 def sensors():
+    if context is not None:
+        return context.sensors
     return components.get_sensors()
 
 def start_session():
     global context
+    if context is not None:
+        print("ERROR", "Session already started")
+        return
+
+
+    components.set_motor(True)
+    components.set_fan(True)
+    components.set_uv(True)
+
     context = Context()
     context.thread = threading.Thread(target=heartbeat)
-    context.thread  = True
+    context.thread.daemon = True
     context.thread.start()
+    print("heartbeat started")
 
 def stop_session():
     global context
+
+    components.set_motor(False)
+    components.set_fan(False)
+    components.set_uv(False)
+
     if context is not None:
         context.running = False
         context.thread.join()
-        print("headbeat stopped")
+        context = None
+        print("heartbeat stopped")
     
 
 
 def heartbeat():
     while context.running:
         time.sleep(0.5)
+        context.sensors = components.get_sensors()
+        print("sensors", context.sensors)
     
