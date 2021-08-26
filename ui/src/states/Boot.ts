@@ -1,9 +1,9 @@
-import { Client, IClient, OfflineClient } from "./Client"
+import { Client, IClient, OfflineClient, defaultConfig, initConfig, progressConfig, setConfiguration } from "./Client"
 import { Clock } from "./Clock"
 import { pointLerp } from "./Helper"
 import { TextButton } from "./TextButton"
 
-const ProximityThreshold = 4000
+const ProximityThreshold = 200
 
 export class Boot extends Phaser.State
 {
@@ -17,7 +17,7 @@ export class Boot extends Phaser.State
     mainConfigurationObject: Phaser.Group
     uvConfigurationObject: Phaser.Group
     fanConfigurationObject: Phaser.Group
-    
+
     startButtuon: TextButton
     cancelButton: TextButton
 
@@ -59,8 +59,8 @@ export class Boot extends Phaser.State
 
     mainConfigurationText: Phaser.Text
     configFanText: Phaser.Text
-    configUvText : Phaser.Text
-    configConcurrentText : Phaser.Text
+    configUvText: Phaser.Text
+    configConcurrentText: Phaser.Text
 
     configUvTitleText: Phaser.Text
     configUvValueText: Phaser.Text
@@ -69,7 +69,7 @@ export class Boot extends Phaser.State
     configFanAutoText: Phaser.Text
     configFanValueText: Phaser.Text
 
-    configurations = { fan: -1, uv: 10, concurrent: true}
+    configurations = { fan: -1, uv: 10, concurrent: true }
     configUvCheckbox: TextButton
     configFanCheckbox: TextButton
     configConcurrentCheckbox: TextButton
@@ -90,8 +90,31 @@ export class Boot extends Phaser.State
     constructor()
     {
         super()
-        this.client = new OfflineClient()
-        // this.client = new Client(this.debugText)
+
+        this.initClientAsync()
+    }
+
+    async initClientAsync()
+    {
+        // this.client = new OfflineClient()
+        this.client = new Client(this.debugText)
+
+        const isOnline = await this.client.ping(1000)
+
+        if (!isOnline)
+        {
+            console.warn("Offline mode")
+            this.client = new OfflineClient()
+        }
+        else
+        {
+            console.info("Online")
+        }
+
+        window["client"] = this.client
+
+        this.sensorUpdater = this.time.events.repeat(1000, Infinity, () => this.sensorUpdate())
+        this.sensorUpdate()
     }
 
     init()
@@ -207,18 +230,18 @@ export class Boot extends Phaser.State
                 this.popupObject.scale.set(1, 1)
             })
             .setActive(false)
-        
+
         // configuration stuff
 
         this.mainConfigurationObject = this.add.group(this.world, "mainConfiguration")
         this.mainConfigurationObject.x = 10
         this.mainConfigurationObject.y = 10
         this.mainConfigurationObject.create(0, 0, this.texturePopup)
-        this.mainConfigurationText = this.add.text(150, 10, "Configurations", {fill: "#000000", fontSize: 26, fontWeight:100}, this.mainConfigurationObject)
+        this.mainConfigurationText = this.add.text(150, 10, "Configurations", { fill: "#000000", fontSize: 26, fontWeight: 100 }, this.mainConfigurationObject)
         this.mainConfigurationText.anchor.set(0.5, 0)
-        this.configUvText = this.add.text(25, 50, "UV", {fill: "#000000", fontSize: 20, fontWeight:100}, this.mainConfigurationObject)
-        this.configFanText = this.add.text(25, 90, "Fan", {fill: "#000000", fontSize: 20, fontWeight:100}, this.mainConfigurationObject)
-        this.configConcurrentText = this.add.text(25, 130, "Concurrent", {fill: "#000000", fontSize: 20, fontWeight:100}, this.mainConfigurationObject)
+        this.configUvText = this.add.text(25, 50, "UV", { fill: "#000000", fontSize: 20, fontWeight: 100 }, this.mainConfigurationObject)
+        this.configFanText = this.add.text(25, 90, "Fan", { fill: "#000000", fontSize: 20, fontWeight: 100 }, this.mainConfigurationObject)
+        this.configConcurrentText = this.add.text(25, 130, "Concurrent", { fill: "#000000", fontSize: 20, fontWeight: 100 }, this.mainConfigurationObject)
 
         this.configUvCheckbox = new TextButton(this.game, 150, 60, this.textureSquare as any, "✔")
             .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
@@ -226,7 +249,7 @@ export class Boot extends Phaser.State
             .withInputScale()
             .setCallBack(() => 
             {
-                if(this.configUvCheckbox.text.text === "✔")
+                if (this.configUvCheckbox.text.text === "✔")
                 {
                     this.configUvCheckbox.text.text = ""
                 }
@@ -242,7 +265,7 @@ export class Boot extends Phaser.State
             .withInputScale()
             .setCallBack(() => 
             {
-                if(this.configFanCheckbox.text.text === "✔")
+                if (this.configFanCheckbox.text.text === "✔")
                 {
                     this.configFanCheckbox.text.text = ""
                 }
@@ -258,7 +281,7 @@ export class Boot extends Phaser.State
             .withInputScale()
             .setCallBack(() => 
             {
-                if(this.configConcurrentCheckbox.text.text === "✔")
+                if (this.configConcurrentCheckbox.text.text === "✔")
                 {
                     this.configConcurrentCheckbox.text.text = ""
                 }
@@ -267,7 +290,7 @@ export class Boot extends Phaser.State
                     this.configConcurrentCheckbox.text.text = "✔"
                 }
             })
-        
+
         this.configProceedButton = new TextButton(this.game, 150, 190, this.texturePopupChoiceButton as any, "Proceed")
             .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
             .groupTo(this.mainConfigurationObject)
@@ -288,11 +311,11 @@ export class Boot extends Phaser.State
         this.uvConfigurationObject = this.add.group(this.world, "uv config")
         this.uvConfigurationObject.x = 10
         this.uvConfigurationObject.y = 10
-        this.uvConfigurationObject.create(0,0, this.texturePopup)
-        this.configUvTitleText = this.add.text(150, 10, "UV Configuration", {fill: "#000000", fontSize: 24, fontWeight: 100, align:"center"}, this.uvConfigurationObject)
+        this.uvConfigurationObject.create(0, 0, this.texturePopup)
+        this.configUvTitleText = this.add.text(150, 10, "UV Configuration", { fill: "#000000", fontSize: 24, fontWeight: 100, align: "center" }, this.uvConfigurationObject)
         this.configUvTitleText.anchor.set(0.5, 0)
 
-        this.configUvValueText = this.add.text(150, 90, this.configurations.uv + " Mins", {fill :"#000000", fontSize: 20, fontWeight:100, align:"center"}, this.uvConfigurationObject)
+        this.configUvValueText = this.add.text(150, 90, this.configurations.uv + " Mins", { fill: "#000000", fontSize: 20, fontWeight: 100, align: "center" }, this.uvConfigurationObject)
         this.configUvValueText.anchor.set(0.5, 0)
         this.configUvDecrementButton = new TextButton(this.game, 80, 100, this.textureSquare as any, " - ")
             .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
@@ -300,7 +323,7 @@ export class Boot extends Phaser.State
             .withInputScale()
             .setCallBack(() => 
             {
-                if(this.configurations.uv > 1)
+                if (this.configurations.uv > 1)
                 {
                     this.configurations.uv = this.configurations.uv - 1
                     this.configUvValueText.text = this.configurations.uv + " Mins"
@@ -313,7 +336,7 @@ export class Boot extends Phaser.State
             .withInputScale()
             .setCallBack(() => 
             {
-                if(this.configurations.uv < 10)
+                if (this.configurations.uv < 10)
                 {
                     this.configurations.uv = this.configurations.uv + 1
                     this.configUvValueText.text = this.configurations.uv + " Mins"
@@ -324,43 +347,43 @@ export class Boot extends Phaser.State
             .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
             .groupTo(this.uvConfigurationObject)
             .withInputScale()
-        
+
         // fan config
 
         this.fanConfigurationObject = this.add.group(this.world, "fan config")
         this.fanConfigurationObject.x = 10
         this.fanConfigurationObject.y = 10
-        this.fanConfigurationObject.create(0,0, this.texturePopup)
-        this.configFanTitleText = this.add.text(150, 10, "Fan Configuration", {fill: "#000000", fontSize: 24, fontWeight: 100, align:"center"}, this.fanConfigurationObject)
+        this.fanConfigurationObject.create(0, 0, this.texturePopup)
+        this.configFanTitleText = this.add.text(150, 10, "Fan Configuration", { fill: "#000000", fontSize: 24, fontWeight: 100, align: "center" }, this.fanConfigurationObject)
         this.configFanTitleText.anchor.set(0.5, 0)
-        this.configFanAutoText = this.add.text(75, 75, "Auto", {fill:"#000000", fontSize: 20, fontWeight:100}, this.fanConfigurationObject)
+        this.configFanAutoText = this.add.text(75, 75, "Auto", { fill: "#000000", fontSize: 20, fontWeight: 100 }, this.fanConfigurationObject)
         this.configFanCheckbox = new TextButton(this.game, 200, 85, this.textureSquare as any, "✔")
             .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
             .groupTo(this.fanConfigurationObject)
             .withInputScale()
             .setCallBack(() => 
             {
-                if(this.configFanCheckbox.text.text === "✔")
+                if (this.configFanCheckbox.text.text === "✔")
                 {
                     this.configFanCheckbox.text.text = ""
-                    this.configFanValueText.scale.set(1,1)
-                    this.configFanDecrementButton.scale.set(1,1)
+                    this.configFanValueText.scale.set(1, 1)
+                    this.configFanDecrementButton.scale.set(1, 1)
                     this.configFanDecrementButton.text.text = "-"
                     this.configFanIncrementButton.text.text = "+"
-                    this.configFanIncrementButton.scale.set(1,1)
+                    this.configFanIncrementButton.scale.set(1, 1)
                 }
                 else
                 {
                     this.configFanCheckbox.text.text = "✔"
-                    this.configFanValueText.scale.set(0,0)
-                    this.configFanDecrementButton.scale.set(0,0)
+                    this.configFanValueText.scale.set(0, 0)
+                    this.configFanDecrementButton.scale.set(0, 0)
                     this.configFanDecrementButton.text.text = ""
                     this.configFanIncrementButton.text.text = ""
-                    this.configFanIncrementButton.scale.set(0,0)
+                    this.configFanIncrementButton.scale.set(0, 0)
                 }
             })
 
-        this.configFanValueText = this.add.text(150, 125, this.configurations.fan + " Mins", {fill :"#000000", fontSize: 20, fontWeight:100, align:"center"}, this.fanConfigurationObject)
+        this.configFanValueText = this.add.text(150, 125, this.configurations.fan + " Mins", { fill: "#000000", fontSize: 20, fontWeight: 100, align: "center" }, this.fanConfigurationObject)
         this.configFanValueText.anchor.set(0.5, 0)
         this.configFanDecrementButton = new TextButton(this.game, 80, 137, this.textureSquare as any, " - ")
             .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
@@ -368,7 +391,7 @@ export class Boot extends Phaser.State
             .withInputScale()
             .setCallBack(() => 
             {
-                if(this.configurations.fan > 1)
+                if (this.configurations.fan > 1)
                 {
                     this.configurations.fan = this.configurations.fan - 1
                     this.configFanValueText.text = this.configurations.fan + " Mins"
@@ -381,7 +404,7 @@ export class Boot extends Phaser.State
             .withInputScale()
             .setCallBack(() => 
             {
-                if(this.configurations.fan < 30)
+                if (this.configurations.fan < 30)
                 {
                     this.configurations.fan = this.configurations.fan + 1
                     this.configFanValueText.text = this.configurations.fan + " Mins"
@@ -422,16 +445,13 @@ export class Boot extends Phaser.State
 
         this.popupObject.scale.set(0, 0)
 
-        this.mainConfigurationObject.scale.set(0,0)
+        this.mainConfigurationObject.scale.set(0, 0)
 
-        this.uvConfigurationObject.scale.set(0,0)
+        this.uvConfigurationObject.scale.set(0, 0)
 
-        this.fanConfigurationObject.scale.set(0,0)
+        this.fanConfigurationObject.scale.set(0, 0)
 
         Boot.onCreate.dispatch()
-
-        this.sensorUpdater = this.time.events.repeat(1000, Infinity, () => this.sensorUpdate())
-        this.sensorUpdate()
     }
 
     setStateText(text: string)
@@ -456,7 +476,7 @@ export class Boot extends Phaser.State
         })
     }
 
-    setPopupDoorCheck()
+    setPopupDoorCheck(noText = "Cancel")
     {
         this.popupText.text = "Door is not fully closed, do you want to overide?"
         this.popupYesButton.text.text = "Overide"
@@ -466,7 +486,7 @@ export class Boot extends Phaser.State
             this.ignoreDoor = true
             this.startProcess()
         })
-        this.popupNoButton.text.text = "Cancel"
+        this.popupNoButton.text.text = noText
         this.popupNoButton.setCallBack(() =>
         {
             this.popupObject.scale.set(0, 0)
@@ -476,8 +496,9 @@ export class Boot extends Phaser.State
     async startProcess()
     {
         console.log("Starting process")
+        this.tickPasued = false
 
-        if (this.sensorData.proximity < ProximityThreshold)
+        if (this.sensorData.proximity > ProximityThreshold)
         {
             console.warn("Door is not closed")
 
@@ -495,10 +516,10 @@ export class Boot extends Phaser.State
         this.startButtuon.setActive(false)
 
         await this.client.start()
+        await this.client.actuate("fan", true)
 
         this.cancelButton.setActive(true)
 
-        this.setStateText("Sterilising and Drying")
         this.updateEvent = this.time.events.repeat(100, Infinity, this.updateProgress, this)
         this.circleA.tint = 0x00AA00
 
@@ -508,7 +529,8 @@ export class Boot extends Phaser.State
     {
         if (!this.isFinished())
         {
-            this.client.stop()
+            await this.client.stop()
+            await this.client.actuate("fan", false)
 
             this.setStateText("Canceled")
             this.time.events.add(2000, () =>
@@ -551,18 +573,68 @@ export class Boot extends Phaser.State
     refProg = 25.0
     fillAX = 0
     fillBX = 0
-
+    tick = 0
+    previousTickTime = performance.now()
+    tickPasued = false
     updateProgress()
     {
-        if (this.input.activePointer.isDown)
+        const currentTickTime = performance.now()
+        const deltaTickTime = (currentTickTime - this.previousTickTime) / 1000.0
+        this.tick++
+
+        if (this.tick % 10 == 0)
         {
-            this.updateEventTick++
+            if (!this.tickPasued)
+            {
+                console.log("progress", progressConfig)
+            }
+            else
+            {
+                console.log("progress", "paused")
+            }
         }
+
+        if (progressConfig.concurrent)
+        {
+            if (progressConfig.fanEnabled)
+            {
+                if (progressConfig.fanSeconds > 0)
+                {
+                    progressConfig.fanSeconds -= deltaTickTime
+                }
+            }
+            if (progressConfig.uvEnabed)
+            {
+                if (progressConfig.uvSeconds > 0)
+                {
+                    progressConfig.uvSeconds -= deltaTickTime
+                }
+            }
+        }
+        else
+        {
+            if (progressConfig.fanEnabled)
+            {
+                if (progressConfig.fanSeconds > 0)
+                {
+
+                }
+            }
+            if (progressConfig.uvEnabed)
+            {
+                if (progressConfig.uvSeconds > 0)
+                {
+
+                }
+            }
+        }
+
 
         if (this.updateEventTick <= this.refProg)
         {
             // this.fillA.scale.x = this.updateEventTick / this.refProg
             this.fillAX = this.updateEventTick / this.refProg
+            this.setStateText("Sterilising and Drying")
         }
 
         if (this.updateEventTick >= this.refProg && this.updateEventTick <= this.refProg * 2)
@@ -584,16 +656,23 @@ export class Boot extends Phaser.State
             this.stopProcess()
         }
 
-        if (this.sensorData.proximity < ProximityThreshold)
+        if (this.sensorData.proximity > ProximityThreshold)
         {
             if (!this.ignoreDoor)
             {
-                this.setPopupDoorCheck()
+                this.setPopupDoorCheck("Resume")
                 this.popupObject.scale.set(1, 1)
+                this.tickPasued = true
             }
         }
-
-        console.log("Progress Update", this.updateEventTick / 10.0, "s")
+        else
+        {
+            if (this.tickPasued)
+            {
+                this.tickPasued = false
+                this.popupObject.scale.set(0, 0)
+            }
+        }
     }
 
     async sensorUpdate()
