@@ -63,7 +63,6 @@ export class Boot extends Phaser.State
     configConcurrentText : Phaser.Text
 
     configUvTitleText: Phaser.Text
-    configUvAutoText: Phaser.Text
     configUvValueText: Phaser.Text
 
     configFanTitleText: Phaser.Text
@@ -79,7 +78,6 @@ export class Boot extends Phaser.State
     configUvValues: TextButton
     configFanValues: TextButton
 
-    configUvAutoCheckbox: TextButton
     configUvIncrementButton: TextButton
     configUvDecrementButton: TextButton
     configUvProceedButton: TextButton
@@ -293,36 +291,10 @@ export class Boot extends Phaser.State
         this.uvConfigurationObject.create(0,0, this.texturePopup)
         this.configUvTitleText = this.add.text(150, 10, "UV Configuration", {fill: "#000000", fontSize: 24, fontWeight: 100, align:"center"}, this.uvConfigurationObject)
         this.configUvTitleText.anchor.set(0.5, 0)
-        this.configUvAutoText = this.add.text(75, 75, "Auto", {fill:"#000000", fontSize: 20, fontWeight:100}, this.uvConfigurationObject)
-        this.configUvCheckbox = new TextButton(this.game, 200, 85, this.textureSquare as any, "✔")
-            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
-            .groupTo(this.uvConfigurationObject)
-            .withInputScale()
-            .setCallBack(() => 
-            {
-                if(this.configUvCheckbox.text.text === "✔")
-                {
-                    this.configUvCheckbox.text.text = ""
-                    this.configUvValueText.scale.set(0,0)
-                    this.configUvDecrementButton.scale.set(0,0)
-                    this.configUvDecrementButton.text.text = ""
-                    this.configUvIncrementButton.text.text = ""
-                    this.configUvIncrementButton.scale.set(0,0)
-                }
-                else
-                {
-                    this.configUvCheckbox.text.text = "✔"
-                    this.configUvValueText.scale.set(1,1)
-                    this.configUvDecrementButton.scale.set(1,1)
-                    this.configUvDecrementButton.text.text = "-"
-                    this.configUvIncrementButton.text.text = "+"
-                    this.configUvIncrementButton.scale.set(1,1)
-                }
-            })
 
-        this.configUvValueText = this.add.text(150, 125, this.configurations.uv + " Mins", {fill :"#000000", fontSize: 20, fontWeight:100, align:"center"}, this.uvConfigurationObject)
+        this.configUvValueText = this.add.text(150, 90, this.configurations.uv + " Mins", {fill :"#000000", fontSize: 20, fontWeight:100, align:"center"}, this.uvConfigurationObject)
         this.configUvValueText.anchor.set(0.5, 0)
-        this.configUvDecrementButton = new TextButton(this.game, 80, 137, this.textureSquare as any, " - ")
+        this.configUvDecrementButton = new TextButton(this.game, 80, 100, this.textureSquare as any, " - ")
             .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
             .groupTo(this.uvConfigurationObject)
             .withInputScale()
@@ -335,7 +307,7 @@ export class Boot extends Phaser.State
                 }
             })
 
-        this.configUvIncrementButton = new TextButton(this.game, 220, 137, this.textureSquare as any, " + ")
+        this.configUvIncrementButton = new TextButton(this.game, 220, 100, this.textureSquare as any, " + ")
             .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
             .groupTo(this.uvConfigurationObject)
             .withInputScale()
@@ -354,6 +326,72 @@ export class Boot extends Phaser.State
             .withInputScale()
         
         // fan config
+
+        this.fanConfigurationObject = this.add.group(this.world, "fan config")
+        this.fanConfigurationObject.x = 10
+        this.fanConfigurationObject.y = 10
+        this.fanConfigurationObject.create(0,0, this.texturePopup)
+        this.configFanTitleText = this.add.text(150, 10, "Fan Configuration", {fill: "#000000", fontSize: 24, fontWeight: 100, align:"center"}, this.fanConfigurationObject)
+        this.configFanTitleText.anchor.set(0.5, 0)
+        this.configFanAutoText = this.add.text(75, 75, "Auto", {fill:"#000000", fontSize: 20, fontWeight:100}, this.fanConfigurationObject)
+        this.configFanCheckbox = new TextButton(this.game, 200, 85, this.textureSquare as any, "✔")
+            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+            .groupTo(this.fanConfigurationObject)
+            .withInputScale()
+            .setCallBack(() => 
+            {
+                if(this.configFanCheckbox.text.text === "✔")
+                {
+                    this.configFanCheckbox.text.text = ""
+                    this.configFanValueText.scale.set(1,1)
+                    this.configFanDecrementButton.scale.set(1,1)
+                    this.configFanDecrementButton.text.text = "-"
+                    this.configFanIncrementButton.text.text = "+"
+                    this.configFanIncrementButton.scale.set(1,1)
+                }
+                else
+                {
+                    this.configFanCheckbox.text.text = "✔"
+                    this.configFanValueText.scale.set(0,0)
+                    this.configFanDecrementButton.scale.set(0,0)
+                    this.configFanDecrementButton.text.text = ""
+                    this.configFanIncrementButton.text.text = ""
+                    this.configFanIncrementButton.scale.set(0,0)
+                }
+            })
+
+        this.configFanValueText = this.add.text(150, 125, this.configurations.fan + " Mins", {fill :"#000000", fontSize: 20, fontWeight:100, align:"center"}, this.fanConfigurationObject)
+        this.configFanValueText.anchor.set(0.5, 0)
+        this.configFanDecrementButton = new TextButton(this.game, 80, 137, this.textureSquare as any, " - ")
+            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+            .groupTo(this.fanConfigurationObject)
+            .withInputScale()
+            .setCallBack(() => 
+            {
+                if(this.configurations.fan > 1)
+                {
+                    this.configurations.fan = this.configurations.fan - 1
+                    this.configFanValueText.text = this.configurations.fan + " Mins"
+                }
+            })
+
+        this.configFanIncrementButton = new TextButton(this.game, 220, 137, this.textureSquare as any, " + ")
+            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+            .groupTo(this.fanConfigurationObject)
+            .withInputScale()
+            .setCallBack(() => 
+            {
+                if(this.configurations.fan < 30)
+                {
+                    this.configurations.fan = this.configurations.fan + 1
+                    this.configFanValueText.text = this.configurations.fan + " Mins"
+                }
+            })
+
+        this.configFanProceedButton = new TextButton(this.game, 150, 190, this.texturePopupChoiceButton as any, "Proceed")
+            .withStyle({ fill: "#000000", fontSize: 20, fontWeight: 100 })
+            .groupTo(this.fanConfigurationObject)
+            .withInputScale()
 
         //popup stuff
         this.popupObject = this.add.group(this.world, "popup")
@@ -387,6 +425,8 @@ export class Boot extends Phaser.State
         this.mainConfigurationObject.scale.set(0,0)
 
         this.uvConfigurationObject.scale.set(0,0)
+
+        this.fanConfigurationObject.scale.set(0,0)
 
         Boot.onCreate.dispatch()
 
