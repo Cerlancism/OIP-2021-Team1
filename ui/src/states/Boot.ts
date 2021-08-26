@@ -16,6 +16,7 @@ export class Boot extends Phaser.State
 
     mainConfigurationObject: Phaser.Group
     uvConfigurationObject: Phaser.Group
+    fanConfigurationObject: Phaser.Group
     
     startButtuon: TextButton
     cancelButton: TextButton
@@ -65,6 +66,10 @@ export class Boot extends Phaser.State
     configUvAutoText: Phaser.Text
     configUvValueText: Phaser.Text
 
+    configFanTitleText: Phaser.Text
+    configFanAutoText: Phaser.Text
+    configFanValueText: Phaser.Text
+
     configurations = { fan: -1, uv: 10, concurrent: true}
     configUvCheckbox: TextButton
     configFanCheckbox: TextButton
@@ -78,6 +83,11 @@ export class Boot extends Phaser.State
     configUvIncrementButton: TextButton
     configUvDecrementButton: TextButton
     configUvProceedButton: TextButton
+
+    configFanAutoCheckbox: TextButton
+    configFanIncrementButton: TextButton
+    configFanDecrementButton: TextButton
+    configFanProceedButton: TextButton
 
     constructor()
     {
@@ -343,7 +353,7 @@ export class Boot extends Phaser.State
             .groupTo(this.uvConfigurationObject)
             .withInputScale()
         
-        
+        // fan config
 
         //popup stuff
         this.popupObject = this.add.group(this.world, "popup")

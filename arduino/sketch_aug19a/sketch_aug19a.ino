@@ -1,6 +1,7 @@
 // Including the Arduino Stepper Library
 #include <Stepper.h>
 #include "DHT.h"
+#include "SharpIR.h"
 
 #define IR_sensor 0 // Infrared Proximity Sensor
 #define fan 50 // 5V fan
@@ -8,6 +9,8 @@
 #define UV 52 // UV Lamp
 
 #define DHTTYPE DHT11
+
+SharpIR sensor { SharpIR::GP2YOA21YK0F, A0};
 
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -100,7 +103,7 @@ void loop() {
       float h = dht.readHumidity();
       // Read temperature as Celsius (the default)
       float t = dht.readTemperature();
-      int p = IRproximity();
+      int p = sensor.getDistance();
       if (isnan(h) || isnan(t) || isnan(p)) 
       {
         Serial.print(0); 
@@ -132,9 +135,4 @@ void baserotate(){
   StepsRequired  =  STEPS_PER_OUT_REV / 4; 
   steppermotor.setSpeed(1000);   
   steppermotor.step(StepsRequired);
-}
-
-int IRproximity (){
-  int val = analogRead(IR_sensor);
-  return val;
 }
