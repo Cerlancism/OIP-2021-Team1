@@ -33,7 +33,7 @@ def start_process():
 
 @app.route("/ping")
 def ping():
-    print("Ping")
+    print("Pinged")
     return "ok"
 
 @app.route("/stop")
@@ -99,11 +99,6 @@ def start_session():
         print("ERROR", "Session already started")
         return
 
-
-    components.set_motor(True)
-    components.set_fan(True)
-    components.set_uv(True)
-
     context = Context()
     context.thread = threading.Thread(target=heartbeat)
     context.thread.daemon = True
@@ -112,10 +107,6 @@ def start_session():
 
 def stop_session():
     global context
-
-    components.set_motor(False)
-    components.set_fan(False)
-    components.set_uv(False)
 
     if context is not None:
         context.running = False

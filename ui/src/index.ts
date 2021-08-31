@@ -1,5 +1,5 @@
 import './global'
-import { Boot } from '/states'
+import { Main } from './states/Main'
 
 if (module.hot)
 {
@@ -31,7 +31,7 @@ async function startGameAsync()
                 height: 240,
                 roundPixels: true,
                 backgroundColor: '#FFF',
-                state: Boot
+                state: Main
             }
 
             // Walkaround to prevent canvas from appearing as black from top left corner when starting the game.
@@ -40,7 +40,7 @@ async function startGameAsync()
 
             const game = new Phaser.Game(config)
 
-            Boot.onCreate.addOnce(() =>
+            Main.onCreate.addOnce(() =>
             {
                 contentStyle.removeProperty("visibility")
             })

@@ -1,7 +1,9 @@
 import serial
 import time
 
+
 class SyringeDryer:
+    """Driver for Arduino actuations through USB"""
     def __init__(self):
         # for windows
         # self.ser = serial.Serial(port='COM4', baudrate=9600, timeout=.1)
