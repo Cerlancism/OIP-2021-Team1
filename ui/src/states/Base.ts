@@ -97,12 +97,12 @@ export abstract class Base extends Phaser.State
         {
             this.popupObject.scale.set(0, 0)
             this.ignoreDoor = true
-            this.startProcess()
         })
         this.popupNoButton.text.text = noText
         this.popupNoButton.setCallBack(() =>
         {
             this.popupObject.scale.set(0, 0)
+            this.stopProcess()
         })
     }
 

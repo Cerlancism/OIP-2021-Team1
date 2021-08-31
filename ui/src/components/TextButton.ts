@@ -23,6 +23,8 @@ export class TextButton extends Phaser.Button
     pressedScale: number;
     disabledAlpha: number = 1;
 
+    private callBackingBinding: Phaser.SignalBinding
+
     constructor(game: Phaser.Game, x: number, y: number, key: number | string, text: string, callback?: Function, context?: any, overFrame?: string | number, outFrame?: string | number, downFrame?: string | number, upFrame?: string | number, centre = true)
     {
         super(game, x, y, key as string, undefined, undefined, overFrame, outFrame, downFrame, upFrame);
@@ -55,16 +57,17 @@ export class TextButton extends Phaser.Button
         }
         if (this.callBack)
         {
-            this.events.onInputUp.remove(this.callBack, context);
+            this.events.onInputUp.remove(this.callBack);
+            this.callBackingBinding.detach()
         }
         this.callBack = callBack;
         if (isOnce)
         {
-            this.events.onInputUp.addOnce((sender, pointer, isOver) => this.handleInputCallBack(sender, pointer, isOver, isOver ? this.callBack : () => { }, context))
+            this.callBackingBinding = this.events.onInputUp.addOnce((sender, pointer, isOver) => this.handleInputCallBack(sender, pointer, isOver, isOver ? this.callBack : () => { }))
         }
         else
         {
-            this.events.onInputUp.add((sender, pointer, isOver) => this.handleInputCallBack(sender, pointer, isOver, isOver ? this.callBack : () => { }, context))
+            this.callBackingBinding = this.events.onInputUp.add((sender, pointer, isOver) => this.handleInputCallBack(sender, pointer, isOver, isOver ? this.callBack : () => { }))
         }
         return this;
     }

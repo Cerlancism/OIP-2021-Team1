@@ -16,9 +16,9 @@ type ConfigurationModel = {
 export const defaultConfig: ConfigurationModel = {
     fanEnabled: true,
     fanAuto: true,
-    fanSeconds: 60,
+    fanSeconds: 180,
     uvEnabed: true,
-    uvSeconds: 300,
+    uvSeconds: 120,
     concurrent: true
 }
 
@@ -51,7 +51,7 @@ export interface IClient
 {
     start(): Promise<void>
     stop(): Promise<void>
-    actuate(component: "fan" | "uv" | "motor", state: boolean): Promise<void>
+    actuate(component: "fan" | "uv" | "motor", state: boolean, bypass?: boolean): Promise<void>
     sensors(): Promise<SensorModel | undefined>
     ping(timeout: number): Promise<boolean>
 }
@@ -96,8 +96,23 @@ export class Client implements IClient
         }
     }
 
-    async actuate(component: "fan" | "uv" | "motor", state: boolean)
+    cacheState = {
+        "fan": false,
+        "uv": false,
+        "motor": false,
+    }
+
+    async actuate(component: "fan" | "uv" | "motor", state: boolean, bypass = false)
     {
+        // if (component === "motor")
+        // {
+        //     return
+        // }
+        if (bypass && this.cacheState[component] === state)
+        {
+            return
+        }
+        this.cacheState[component] = state
         const response = await fetch(`${this.endpoint}/${component}?${state ? "on" : "off"}`)
         const result = await response.text()
         console.log("Actuate", component, result)
@@ -176,7 +191,7 @@ export class OfflineClient implements IClient
 
     }
 
-    async actuate(component: "fan" | "uv" | "motor", state: boolean)
+    async actuate(component: "fan" | "uv" | "motor", state: boolean, bypass = false)
     {
 
     }

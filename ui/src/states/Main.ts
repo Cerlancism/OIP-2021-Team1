@@ -6,7 +6,7 @@ import { createConfigurator, preloadConfigurator } from "/components/Configurato
 import { createProgresser, preloadProgresser, setProgresser, updateProgresser } from "/components/Progresser"
 
 const ProximityThreshold = 200
-const HumidityThreshold = 65
+const HumidityThreshold = 62
 
 export class Main extends Base
 {
@@ -32,11 +32,13 @@ export class Main extends Base
     private tickPaused = false
 
     private isReady: Promise<void>
+    private finished = false
+
+    startingHumidity = HumidityThreshold
 
     constructor()
     {
         super()
-        this.isReady = this.initClientAsync()
     }
 
     async initClientAsync()
@@ -49,6 +51,7 @@ export class Main extends Base
         if (!isOnline)
         {
             console.warn("Offline mode")
+            this.debugText.text = "Offline Mode"
             this.client = new OfflineClient()
         }
         else
@@ -57,7 +60,6 @@ export class Main extends Base
         }
 
         window["client"] = this.client
-        this.debugText.text = "Offline Mode"
         this.sensorUpdater = this.time.events.repeat(1000, Infinity, () => this.sensorUpdate())
 
         return await Promise.resolve()
@@ -88,6 +90,7 @@ export class Main extends Base
         createConfigurator.call(this)
 
         Main.onCreate.dispatch()
+        this.isReady = this.initClientAsync()
     }
 
     setStateText(text: string)
@@ -98,7 +101,6 @@ export class Main extends Base
 
     async startProcess()
     {
-        await this.isReady
         console.log("Starting process")
 
         if (this.isPaused)
@@ -108,6 +110,7 @@ export class Main extends Base
         else
         {
             console.log("New process")
+            this.finished = false
             setConfiguration(initConfig, progressConfig)
 
             if (!progressConfig.fanEnabled)
@@ -118,38 +121,7 @@ export class Main extends Base
             {
                 progressConfig.uvSeconds = 0
             }
-
-            this.client.actuate("motor", true)
-
-            if (progressConfig.uvSeconds > 0)
-            {
-                this.client.actuate("uv", true)
-            }
-
-            if (progressConfig.fanSeconds > 0)
-            {
-                this.client.actuate("fan", true)
-            }
-
             this.resetProgressView()
-        }
-
-        if (this.sensorData.proximity > ProximityThreshold)
-        {
-            console.warn("Door is not closed")
-
-            if (!this.ignoreDoor)
-            {
-                this.isPaused = true
-                this.setPopupDoorCheck()
-                this.popupObject.scale.set(1, 1)
-
-                this.client.actuate("uv", false)
-                this.client.actuate("motor", false)
-                this.client.actuate("fan", false)
-                return
-            }
-            console.log("Door check is ignored")
         }
 
         this.tickPaused = false
@@ -157,23 +129,30 @@ export class Main extends Base
 
         this.startButtuon.setActive(false)
 
-        // await this.client.start()
-        await this.client.actuate("fan", true)
+        await this.client.start()
 
         this.cancelButton.setActive(true)
 
-        this.updateEvent = this.time.events.repeat(100, Infinity, this.updateProgress, this)
+        this.time.events.remove(this.updateEvent)
+        this.updateEvent = this.time.events.repeat(500, Infinity, this.updateProgress, this)
         this.circleA.tint = 0x00AA00
 
     }
 
     async stopProcess()
     {
-        if (!this.isFinished())
+        console.log("Stopping Process")
+        this.time.events.remove(this.updateEvent)
+        setTimeout(async () =>
         {
             await this.client.stop()
+            await this.client.actuate("motor", false)
+            await this.client.actuate("uv", false)
             await this.client.actuate("fan", false)
+        }, 1000)
 
+        if (!this.isFinished())
+        {
             this.setStateText("Canceled")
             this.time.events.add(2000, () =>
             {
@@ -187,19 +166,13 @@ export class Main extends Base
         }
         else
         {
-            this.client.actuate("uv", false)
-            this.client.actuate("motor", false)
-            this.client.actuate("fan", false)
-            
             this.setStateText("Finished")
             setConfiguration(defaultConfig, initConfig)
         }
 
         this.startButtuon.setActive(true)
         this.cancelButton.setActive(false)
-
-        this.time.events.remove(this.updateEvent)
-
+        console.log("Stopped Process")
     }
 
     resetProgressView()
@@ -227,9 +200,9 @@ export class Main extends Base
             {
                 return true
             }
-            else
+            else if (this.sensorData.humidity <= HumidityThreshold)
             {
-                return this.sensorData.humidity <= HumidityThreshold
+                return true
             }
         })()
 
@@ -239,7 +212,7 @@ export class Main extends Base
     updateProgress()
     {
         const currentTickTime = performance.now()
-        const deltaTickTime = (currentTickTime - this.previousTickTime) / 1000.0 * 10
+        const deltaTickTime = (currentTickTime - this.previousTickTime) / 1000.0
         this.previousTickTime = currentTickTime
         this.tick++
 
@@ -255,7 +228,40 @@ export class Main extends Base
             }
         }
 
-        if (this.isPaused)
+        if (this.sensorData.proximity > ProximityThreshold)
+        {
+            if (!this.ignoreDoor)
+            {
+                if (!this.tickPaused) {
+                    this.setPopupDoorCheck("Stop")
+                    this.popupObject.scale.set(1, 1)
+                    this.tickPaused = true
+                }
+
+                !(async () =>
+                {
+                    await this.client.actuate("motor", false, true)
+                    await this.client.actuate("uv", false, true)
+                    await this.client.actuate("fan", false, true)
+                })()
+                return
+            }
+            else
+            {
+                this.client.actuate("motor", true, true)
+            }
+        }
+        else
+        {
+            this.client.actuate("motor", true, true)
+            if (this.tickPaused)
+            {
+                this.tickPaused = false
+                this.popupObject.scale.set(0, 0)
+            }
+        }
+
+        if (this.isPaused || this.finished)
         {
             return
         }
@@ -265,18 +271,24 @@ export class Main extends Base
         if (progressConfig.concurrent || progressConfig.uvSeconds <= 0)
         {
             progressConfig.fanSeconds -= deltaTickTime
+            this.client.actuate("uv", true, true)
         }
 
         if (progressConfig.uvEnabed && progressConfig.uvSeconds <= 0)
         {
             progressConfig.uvEnabed = false
-            this.client.actuate("uv", false)
+            this.client.actuate("uv", false, true)
         }
 
         if (progressConfig.fanEnabled && !progressConfig.fanAuto && progressConfig.fanSeconds <= 0)
         {
             progressConfig.fanEnabled = false
-            this.client.actuate("fan", false)
+            this.client.actuate("fan", false, true)
+        }
+
+        if (progressConfig.concurrent && progressConfig.fanAuto)
+        {
+            this.client.actuate("fan", true, true)
         }
 
         let uvProgress = 0
@@ -294,6 +306,7 @@ export class Main extends Base
         if (progressConfig.uvSeconds <= 0 && progressConfig.fanSeconds > 0)
         {
             fanProgress = (initConfig.fanSeconds - progressConfig.fanSeconds) / initConfig.fanSeconds * 50
+            this.client.actuate("fan", true, true)
         }
         else
         {
@@ -328,6 +341,7 @@ export class Main extends Base
             {
                 this.circleC.tint = 0x00AA00
                 this.setStateText("Finished")
+                this.finished = true
                 this.stopProcess()
                 return
             }
@@ -338,24 +352,6 @@ export class Main extends Base
             {
                 x.b = 1
             })
-        }
-
-        if (this.sensorData.proximity > ProximityThreshold)
-        {
-            if (!this.ignoreDoor)
-            {
-                this.setPopupDoorCheck("Resume")
-                this.popupObject.scale.set(1, 1)
-                this.tickPaused = true
-            }
-        }
-        else
-        {
-            if (this.tickPaused)
-            {
-                this.tickPaused = false
-                this.popupObject.scale.set(0, 0)
-            }
         }
     }
 

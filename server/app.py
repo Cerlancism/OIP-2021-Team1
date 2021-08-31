@@ -27,19 +27,19 @@ def start_process():
     config.concurrent = request.args.get("concurrent") is not None
     config.ignore_door = request.args.get("ignore_door") is not None
 
-    start_session()
+    # start_session()
 
     return config.__dict__
 
 @app.route("/ping")
 def ping():
     print("Pinged")
-    return "ok"
+    return "ok\n"
 
 @app.route("/stop")
 def stop_process():
     print("Stopping process", request.query_string)
-    stop_session()
+    # stop_session()
     return "ok\n"
 
 
@@ -94,6 +94,7 @@ def sensors():
     return components.get_sensors()
 
 def start_session():
+    print("Starting Session")
     global context
     if context is not None:
         print("ERROR", "Session already started")
@@ -103,7 +104,7 @@ def start_session():
     context.thread = threading.Thread(target=heartbeat)
     context.thread.daemon = True
     context.thread.start()
-    print("heartbeat started")
+    print("Heartbeat started")
 
 def stop_session():
     global context
@@ -112,7 +113,7 @@ def stop_session():
         context.running = False
         context.thread.join()
         context = None
-        print("heartbeat stopped")
+        print("Heartbeat stopped")
     
 
 
@@ -120,5 +121,8 @@ def heartbeat():
     while context.running:
         time.sleep(0.5)
         context.sensors = components.get_sensors()
-        print("sensors", context.sensors)
+        print(context.sensors)
+
+time.sleep(1)
+start_session()
     
