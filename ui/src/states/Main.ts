@@ -119,6 +119,18 @@ export class Main extends Base
                 progressConfig.uvSeconds = 0
             }
 
+            this.client.actuate("motor", true)
+
+            if (progressConfig.uvSeconds > 0)
+            {
+                this.client.actuate("uv", true)
+            }
+
+            if (progressConfig.fanSeconds > 0)
+            {
+                this.client.actuate("fan", true)
+            }
+
             this.resetProgressView()
         }
 
@@ -175,6 +187,10 @@ export class Main extends Base
         }
         else
         {
+            this.client.actuate("uv", false)
+            this.client.actuate("motor", false)
+            this.client.actuate("fan", false)
+            
             this.setStateText("Finished")
             setConfiguration(defaultConfig, initConfig)
         }
