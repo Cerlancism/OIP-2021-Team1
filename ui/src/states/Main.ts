@@ -1,12 +1,14 @@
 import { Base } from "./Base"
-import { Client, IClient, OfflineClient, defaultConfig, initConfig, progressConfig, setConfiguration } from "/components/Client"
+import { Client, IClient, OfflineClient, defaultConfig, initConfig, progressConfig, setConfiguration, SensorModel } from "/components/Client"
 import { Clock } from "/components/Clock"
 
 import { createConfigurator, preloadConfigurator } from "/components/Configurator"
+import { isDired, meanHumidity, sampleData } from "/components/DrynessDetector"
 import { createProgresser, preloadProgresser, setProgresser, updateProgresser } from "/components/Progresser"
 
 const ProximityThreshold = 200
-const HumidityThreshold = 62
+
+// console.log("average humidity", mean(sampleData.map(x => x.humidity)))
 
 export class Main extends Base
 {
@@ -34,7 +36,12 @@ export class Main extends Base
     private isReady: Promise<void>
     private finished = false
 
-    startingHumidity = HumidityThreshold
+    textMin: Phaser.Text
+    textMax: Phaser.Text
+    graphHumidity: Phaser.Graphics
+    graphWidth: number
+    graphHeight: number
+    graphHumidityRaw: Phaser.Graphics
 
     constructor()
     {
@@ -53,6 +60,8 @@ export class Main extends Base
             console.warn("Offline mode")
             this.debugText.text = "Offline Mode"
             this.client = new OfflineClient()
+
+            this.demo()
         }
         else
         {
@@ -84,13 +93,151 @@ export class Main extends Base
         this.clock.create()
 
         this.debugText = this.add.text(0, 0, "Debug Mode", { font: "monospace" })
-        this.stateText = this.add.text(160, 120, "", { fontSize: 24 })
+        this.stateText = this.add.text(160, 130, "", { fontSize: 24, align: "center" })
+
+        this.textMax = this.add.text(20, 20, "0", { fontSize: 12 })
+        this.textMin = this.add.text(20, 80, "0", { fontSize: 12 })
+
+        this.graphWidth = 220
+        this.graphHeight = 60
+
+        this.graphHumidity = this.add.graphics(50, 20)
+        this.graphHumidityRaw = this.add.graphics(50, 20)
 
         createProgresser.call(this)
         createConfigurator.call(this)
 
         Main.onCreate.dispatch()
         this.isReady = this.initClientAsync()
+    }
+
+    demo()
+    {
+        this.clock.clockObject.visible = false
+        // this.debugText.visible = false
+        this.time.events.repeat(1, Infinity, () => this.updateGraph())
+        this.startButtuon.setActive(false)
+        this.circleA.tint = 0x00AA00
+    }
+
+    drawPoint(total: number, current: number, min: number, max: number, value: number, action = (x: number, y: number) => this.graphHumidity.lineTo(x, y))
+    {
+        const width = (this.graphWidth) / (total - 1)
+        const x = width * current
+        const height = max - min
+        const y = this.graphHeight - (((value - min) / height) * this.graphHeight)
+
+        // console.log(x, y)
+        action(x, y)
+    }
+
+    secondsPassed = 0
+    maxSeen = 0
+    minSeen = 100
+    lables: Phaser.Text[] = []
+
+    isDiredDetected = false
+
+    sensoryHistorySeconds: SensorModel[] = [sampleData[0]]
+    updateGraph()
+    {
+        // if (this.secondsPassed >= sampleData.length)
+        // {
+        //     this.setStateText("Finished")
+        //     this.circleC.tint = 0x00AA00
+        //     return
+        // }
+        this.secondsPassed++
+
+        if (sampleData[this.secondsPassed])
+        {
+            const { humidity, temperature, proximity } = sampleData[this.secondsPassed]
+            this.debugText.text = `h:${humidity.toFixed(1)} t:${temperature.toFixed(1)} p:${proximity.toFixed(0)}`
+            this.sensoryHistorySeconds.push(sampleData[this.secondsPassed])
+        }
+        else
+        {
+            return
+        }
+
+
+        this.tickProgress = this.secondsPassed <= 60 * 5 ? ((this.secondsPassed / (60 * 5)) * 50) : (50 + ((this.secondsPassed) / (60 * 20)) * 50)
+
+        this.updateProgressBar()
+
+        // const dataRange = sampleData.slice(0, this.secondsPassed)
+
+        const latest = meanHumidity(this.sensoryHistorySeconds)
+        const latestRaw = this.sensoryHistorySeconds[this.secondsPassed].humidity
+
+        if (latestRaw > this.maxSeen)
+        {
+            this.maxSeen = latestRaw
+        }
+        if (latestRaw < this.minSeen)
+        {
+            this.minSeen = latestRaw
+        }
+
+
+        this.graphHumidity.clear()
+        this.graphHumidityRaw.clear()
+
+        if (this.sensoryHistorySeconds.length <= 10) {
+            return
+        }
+
+        this.drawPoint(this.secondsPassed, 0, this.minSeen, this.maxSeen, this.sensoryHistorySeconds[10].humidity, (x, y) => this.graphHumidityRaw.moveTo(x, y))
+        this.drawPoint(this.secondsPassed, 0, this.minSeen, this.maxSeen, meanHumidity(this.sensoryHistorySeconds, 10), (x, y) => this.graphHumidity.moveTo(x, y))
+        const timeStamp = `${Math.floor(this.secondsPassed / 60).toString().padStart(2, "0")}:${(this.secondsPassed % 60).toString().padStart(2, "0")}`
+        for (let index = 10; index < this.secondsPassed; index++)
+        {
+            if (index < 20 * 60)
+            {
+                this.graphHumidity.lineStyle(1, 0xFF0000)
+                this.graphHumidityRaw.lineStyle(1, 0xFF0000, 0.1)
+
+                if (this.secondsPassed < 5 * 60)
+                {
+                    this.setStateText(`Sterialising ${timeStamp}`)
+                }
+                else if (this.secondsPassed < 20 * 60)
+                {
+                    this.setStateText(`Drying ${timeStamp}`)
+                }
+
+            }
+            else
+            {
+                this.graphHumidity.lineStyle(2, 0xFF9900)
+                this.graphHumidityRaw.lineStyle(1, 0xFF9900, 0.1)
+                const { result, percent} = isDired(this.sensoryHistorySeconds, index)
+                if (result)
+                {
+                    if (!this.isDiredDetected)
+                    {
+                        this.isDiredDetected = true
+                        this.setStateText(`Finished at: ${timeStamp}`)
+                    }
+                    this.circleC.tint = 0x00AA00
+                    this.graphHumidity.lineStyle(2, 0x00FF00)
+                    this.graphHumidityRaw.lineStyle(1, 0x00FF00, 0.1)
+                }
+                else
+                {
+                    if (!this.isDiredDetected)
+                    {
+                        this.setStateText(`Detecting Dryness ${timeStamp} \n${(percent * 100).toFixed(0)}%`)
+                    }
+                }
+            }
+
+            this.drawPoint(this.secondsPassed, index, this.minSeen, this.maxSeen, meanHumidity(this.sensoryHistorySeconds, index))
+            this.drawPoint(this.secondsPassed, index, this.minSeen, this.maxSeen, this.sensoryHistorySeconds[index].humidity, (x, y) => this.graphHumidityRaw.lineTo(x, y))
+        }
+
+        this.textMin.text = this.minSeen.toFixed(1)
+        this.textMax.text = this.maxSeen.toFixed(1)
     }
 
     setStateText(text: string)
@@ -200,10 +347,6 @@ export class Main extends Base
             {
                 return true
             }
-            else if (this.sensorData.humidity <= HumidityThreshold)
-            {
-                return true
-            }
         })()
 
         return uvDone && fanDone && autoFanDone
@@ -232,7 +375,8 @@ export class Main extends Base
         {
             if (!this.ignoreDoor)
             {
-                if (!this.tickPaused) {
+                if (!this.tickPaused)
+                {
                     this.setPopupDoorCheck("Stop")
                     this.popupObject.scale.set(1, 1)
                     this.tickPaused = true
@@ -315,9 +459,14 @@ export class Main extends Base
 
         this.tickProgress = uvProgress + (uvProgress === 50 ? fanProgress : 0)
 
+        this.updateProgressBar()
+    }
+
+    updateProgressBar()
+    {
         if (this.tickProgress <= 50)
         {
-            this.setStateText("Sterilising (UV)")
+            // this.setStateText("Sterilising (UV)")
             setProgresser(x =>
             {
                 x.a = this.tickProgress / 50
@@ -326,7 +475,7 @@ export class Main extends Base
 
         if (this.tickProgress > 50 && this.tickProgress <= 100)
         {
-            this.setStateText("Drying")
+            // this.setStateText("Drying")
             this.circleB.tint = 0x00AA00
             setProgresser(x =>
             {
@@ -340,13 +489,13 @@ export class Main extends Base
             if (this.isFinished())
             {
                 this.circleC.tint = 0x00AA00
-                this.setStateText("Finished")
+                // this.setStateText("Finished")
                 this.finished = true
                 this.stopProcess()
                 return
             }
 
-            this.setStateText("Detecting Dryness")
+            // this.setStateText("Detecting Dryness")
             this.circleC.tint = 0xAAAA00
             setProgresser(x =>
             {

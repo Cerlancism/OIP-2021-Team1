@@ -1,4 +1,4 @@
-type SensorModel = {
+export type SensorModel = {
     temperature: number,
     humidity: number,
     proximity: number

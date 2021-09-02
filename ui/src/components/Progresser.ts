@@ -44,7 +44,7 @@ export function createProgresser(this: Main)
 {
     this.progressOject = this.add.group(this.world, "progress")
     this.progressOject.x = 25
-    this.progressOject.y = 70
+    this.progressOject.y = 100
     this.circleA = this.progressOject.create(0, 0, this.progressCircleTexture)
 
     this.progressOject.create(30, 5, this.progressBarTexture)
@@ -61,7 +61,7 @@ export function createProgresser(this: Main)
 
     this.circleC = this.progressOject.create(240, 0, this.progressCircleTexture)
 
-    const buttonY = 190
+    const buttonY = 200
 
     this.startButtuon = new TextButton(this.game, 320 / 2, buttonY, this.textureStartButton as any, "Start")
         .withStyle({ fill: "#FFFFFF", fontSize: 37.5, fontWeight: 100 })
